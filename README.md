@@ -4,6 +4,8 @@ Regarding the reproducement of the paper, please let me know your concerns and f
 
 ![alt text](https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true)
 ![alt text](https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png?raw=true)
+<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png  width="200" height="400"/>
+<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png  width="200" height="400"/>
 
 
 ## Installation
