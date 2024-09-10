@@ -2,7 +2,7 @@
 
 Regarding the reproducement of the paper, please let me know your concerns and feel free to comment them in the `Issues` part.
 
-<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true" height="300"/> <img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png" height="300"/>
+<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true" height="400"/> <img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png" height="400"/>
 
 
 ## Installation
