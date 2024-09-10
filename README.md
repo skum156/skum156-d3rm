@@ -2,6 +2,10 @@
 
 Regarding the reproducement of the paper, please let me know your concerns and feel free to comment them in the `Issues` part.
 
+![alt text](https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true)
+![alt text](https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png?raw=true)
+
+
 ## Installation
 
 ```shell
@@ -12,7 +16,8 @@ pip -r install requirements.txt
 ## Available models
 
 ## Model Download
-* Pretrained NAR-HC baseline model [link](https://drive.google.com/file/d/1puA0CkXGioXs9OrS1w-AvwN71yi2cxae/view?usp=sharing)
+* Pretrained NAR-HC baseline model [[link](https://drive.google.com/file/d/1puA0CkXGioXs9OrS1w-AvwN71yi2cxae/view?usp=sharing)]
+* Pretrained D3RM model [[link]()]
 
 
 
