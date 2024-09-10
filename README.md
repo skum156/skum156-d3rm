@@ -2,8 +2,8 @@
 
 Regarding the reproducement of the paper, please let me know your concerns and feel free to comment them in the `Issues` part.
 
-<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true" width="400"/>
-<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png" width="400"/>
+<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true" width="350"/>
+<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png" width="350"/>
 
 
 ## Installation
