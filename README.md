@@ -3,7 +3,7 @@
 Regarding the reproducement of the paper, please let me know your concerns and feel free to comment them in the `Issues` part.
 
 ![image](https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true | width="100")
-![alt text](https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png?raw=true)
+![image](https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png?raw=true)
 <img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true  width="200" height="400"/>
 <img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png  width="200" height="400"/>
 
