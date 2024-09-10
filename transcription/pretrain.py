@@ -150,10 +150,6 @@ class PAR_v2_HPP(nn.Module):
         x = self.block_6(x) # + x
         x = self.block_7(x) # + x
         x = self.block_8(x) # + x
-        # x = self.conv_9(x)
-        # x = torch.relu(x)
-        # x = self.conv_10(x)
-        # x = torch.sigmoid(x)
         
         x = x.permute(0, 2, 1, 3)  # B, 128, T, 88 -> B, T, 128, 88
         return x  
@@ -203,79 +199,8 @@ class ConvFilmBlock(nn.Module):
         return x
 
 
-class PAR_v2_HPP2(nn.Module):
-    # SimpleConv without Pitchwise Conv
-    def __init__(self, n_mels, cnn_unit, fc_unit, win_fw, win_bw, hidden_per_pitch, use_film,
-                 cnn_widths = [3,3,3,3,3,3], n_per_pitch=5):
-        super().__init__()
-
-        self.win_fw = win_fw
-        self.win_bw = win_bw
-        self.hidden_per_pitch = hidden_per_pitch
-    
-        self.frontend = MIDIFrontEnd(5)
-        # input is batch_size * 1 channel * frames * 700
-        middle_unit = 128
-        self.block_1 = ConvFilmBlock(3, cnn_unit, 7, 1, use_film=True, n_f=495)
-        self.block_2 = ConvFilmBlock(cnn_unit, cnn_unit, 7, 1, use_film=True, n_f=495)
-        self.block_2_5 = ConvFilmBlock(cnn_unit, middle_unit, 7, 1, pool_size=(1,5), use_film=True, n_f=495)
-            
-        self.conv_3 = HarmonicDilatedConv(middle_unit, middle_unit, 1)
-        self.conv_4 = HarmonicDilatedConv(middle_unit, middle_unit, 1)
-        self.conv_5 = HarmonicDilatedConv(middle_unit, middle_unit, 1)
-
-        self.block_4 = ConvFilmBlock(middle_unit, middle_unit, [1,3], [1, 12], use_film=True, n_f=99)
-        self.block_5 = ConvFilmBlock(middle_unit, middle_unit, [1,3], [1, 12], use_film=True, n_f=88)
-        self.block_6 = ConvFilmBlock(middle_unit, middle_unit, [5,1], 1, use_film=True, n_f=88)
-        self.block_7 = ConvFilmBlock(middle_unit, middle_unit, [5,1], 1, use_film=True, n_f=88)
-        self.block_8 = ConvFilmBlock(middle_unit, middle_unit, [5,1], 1, use_film=True, n_f=88)
-
-    def forward(self, audio, device=None):
-        mel = self.frontend(audio) # added
-        x = self.block_1(mel.permute(0, 1, 3, 2))
-        x = self.block_2(x)
-        x = self.block_2_5(x)
-        x = self.conv_3(x)
-        x = self.conv_4(x)
-        x = self.conv_5(x)
-        x = self.block_4(x)
-        x = x[:,:,:,:88]
-        # => [b x 1 x T x 88]
-
-        x = self.block_5(x)
-        # => [b x ch x T x 88]
-        x = self.block_6(x) # + x
-        x = self.block_7(x) # + x
-        x = self.block_8(x) # + x
-        # x = self.conv_9(x)
-        # x = torch.relu(x)
-        # x = self.conv_10(x)
-        # x = torch.sigmoid(x)
-        
-        x = x.permute(0, 2, 1, 3)  # B, 128, T, 88 -> B, T, 128, 88
-        return x  
-
-
 def load_pretrain(encoder_type, trained_encoder=True, use_vel=False):
-    if encoder_type == "CNN":
-        model = PAR_v2_HPP2(n_mels=495, cnn_unit=48, fc_unit=48, win_fw=3, win_bw=3, hidden_per_pitch=48, use_film=True)
-        if trained_encoder:
-            ckp = th.load('model_120k_0.9181.pt')
-            model.load_state_dict(ckp['model_state_dict'], strict=False)
-            print('Use pretrained encoder: PAR_v2_HPP2')
-        else:
-            print('Training encoder (PAR_v2_HPP2) from scratch..?????? YOu sure?')
-
-    elif encoder_type == "AR":
-        model = ARModel(use_vel=use_vel)
-        if trained_encoder:
-            ckp = th.load('model_130k_0.9140.pt')
-            model.load_state_dict(ckp['model_state_dict'], strict=False)
-            print('Use pretrained encoder: ARModel')
-        else:
-            print('Training encoder (ARModel) from scratch')
-
-    elif encoder_type == "NAR":
+    if encoder_type == "NAR":
         model = ARModel(use_vel=use_vel)
         if trained_encoder:
             ckp = th.load('model_170k_0.9063_nonar.pt')

@@ -35,7 +35,6 @@ import wandb
 
 from .diffusion.lr_scheduler import ReduceLROnPlateauWithWarmup
 from .model_diffusion import TransModel
-from .solver_diffusion import Solver
 try:
     from torch.cuda.amp import autocast, GradScaler
     AMP = True

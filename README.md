@@ -5,40 +5,17 @@ Regarding the reproducement of the paper, please let me know your concerns and f
 ## Installation
 
 ```shell
-git clone https://github.com/alibaba/FunCodec.git && cd FunCodec
-pip install --editable ./
+git clone https://github.com/hanshounsu/d3rm.git
+pip -r install requirements.txt
 ```
 
 ## Available models
-🤗 links to the Huggingface model hub, while ⭐ refers the Modelscope.
-
-| Model name                                                          |                                                                                                              Model hub                                                                                                               |  Corpus  |  Bitrate  | Parameters | Flops  |
-|:--------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------:|:---------:|:----------:|:------:|
-| audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch             |             [🤗](https://huggingface.co/alibaba-damo/audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch) [⭐](https://www.modelscope.cn/models/damo/audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch/summary)             | General  | 250~8000  |  57.83 M   | 7.73G  |
-| audio_codec-encodec-zh_en-general-16k-nq32ds320-pytorch             |             [🤗](https://huggingface.co/alibaba-damo/audio_codec-encodec-zh_en-general-16k-nq32ds320-pytorch) [⭐](https://www.modelscope.cn/models/damo/audio_codec-encodec-zh_en-general-16k-nq32ds320-pytorch/summary)             | General  | 500~16000 |  14.85 M   | 3.72 G |
-| audio_codec-encodec-en-libritts-16k-nq32ds640-pytorch               |               [🤗](https://huggingface.co/alibaba-damo/audio_codec-encodec-en-libritts-16k-nq32ds640-pytorch) [⭐](https://www.modelscope.cn/models/damo/audio_codec-encodec-en-libritts-16k-nq32ds640-pytorch/summary)               | LibriTTS | 250~8000  |  57.83 M   | 7.73G  |
-| audio_codec-encodec-en-libritts-16k-nq32ds320-pytorch               |               [🤗](https://huggingface.co/alibaba-damo/audio_codec-encodec-en-libritts-16k-nq32ds320-pytorch) [⭐](https://www.modelscope.cn/models/damo/audio_codec-encodec-en-libritts-16k-nq32ds320-pytorch/summary)               | LibriTTS | 500~16000 |  14.85 M   | 3.72 G |
-| audio_codec-freqcodec_magphase-en-libritts-16k-gr8nq32ds320-pytorch | [🤗](https://huggingface.co/alibaba-damo/audio_codec-freqcodec_magphase-en-libritts-16k-gr8nq32ds320-pytorch) [⭐](https://www.modelscope.cn/models/damo/audio_codec-freqcodec_magphase-en-libritts-16k-gr8nq32ds320-pytorch/summary) | LibriTTS | 500~16000 |   4.50 M   | 2.18 G | 
-| audio_codec-freqcodec_magphase-en-libritts-16k-gr1nq32ds320-pytorch | [🤗](https://huggingface.co/alibaba-damo/audio_codec-freqcodec_magphase-en-libritts-16k-gr1nq32ds320-pytorch) [⭐](https://www.modelscope.cn/models/damo/audio_codec-freqcodec_magphase-en-libritts-16k-gr1nq32ds320-pytorch/summary) | LibriTTS | 500~16000 |   0.52 M   | 0.34 G |
 
 ## Model Download
-### Download models from ModelScope
-Please refer `egs/LibriTTS/codec/encoding_decoding.sh` to download pretrained models:
-```shell
-cd egs/LibriTTS/codec
-model_name=audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch
-bash encoding_decoding.sh --stage 0 --model_name ${model_name} --model_hub modelscope
-# The pre-trained model will be downloaded to exp/audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch
-```
+* Pretrained NAR-HC baseline model [link](https://drive.google.com/file/d/1puA0CkXGioXs9OrS1w-AvwN71yi2cxae/view?usp=sharing)
 
-### Download models from Huggingface
-Please refer `egs/LibriTTS/codec/encoding_decoding.sh` to download pretrained models:
-```shell
-cd egs/LibriTTS/codec
-model_name=audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch
-bash encoding_decoding.sh --stage 0 --model_name ${model_name} --model_hub huggingface
-# The pre-trained model will be downloaded to exp/audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch
-```
+
+
 
 ## Inference
 ### Batch inference
