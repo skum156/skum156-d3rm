@@ -12,8 +12,6 @@ git clone https://github.com/hanshounsu/d3rm.git
 pip -r install requirements.txt
 ```
 
-## Available models
-
 ## Model Download
 * Pretrained NAR-HC baseline model [[link](https://drive.google.com/file/d/1puA0CkXGioXs9OrS1w-AvwN71yi2cxae/view?usp=sharing)]
 * Pretrained D3RM model [[link]()]
@@ -30,11 +28,13 @@ python -m transcription.train_diffusion --config=configs/VQ_Diffusion_S.json --n
 CUDA_VISIBLE_DEVICES="1" python -m transcription.train_diffusion --config=configs/VQ_Diffusion_S.json --no-ddp --finetune --eval --resume_dir runs/DiscDiff_240901-102544_91259ght
 ```
 
+## Additional Samples
+
 ## Acknowledge
 
-1. We had a consistent design of [FunASR](https://github.com/alibaba/FunASR), including dataloader, model definition and so on.
-2. We borrowed a lot of code from [Kaldi](http://kaldi-asr.org/) for data preparation.
-4. We borrowed the design of model architecture from [Enocdec](https://github.com/facebookresearch/encodec) and [Enocdec_Trainner](https://github.com/Mikxox/EnCodec_Trainer).
+<!-- 1. We had a consistent design of [FunASR](https://github.com/alibaba/FunASR), including dataloader, model definition and so on. -->
+<!-- 2. We borrowed a lot of code from [Kaldi](http://kaldi-asr.org/) for data preparation. -->
+<!-- 4. We borrowed the design of model architecture from [Enocdec](https://github.com/facebookresearch/encodec) and [Enocdec_Trainner](https://github.com/Mikxox/EnCodec_Trainer). -->
 
 ## License
 This project is licensed under [The MIT License](https://opensource.org/licenses/MIT). 
