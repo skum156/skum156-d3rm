@@ -60,21 +60,21 @@ def log_onehot_to_index(log_x):
     return log_x.argmax(1)
 
 
+# def alpha_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 0.000009, ctt_T = 0.99999):
 def alpha_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 0.000009, ctt_T = 0.99999):
     att = np.arange(0, time_step)/(time_step-1)*(att_T - att_1) + att_1 # accumulate (0.9999 ~ 0)
     att = np.concatenate(([1], att)) 
     at = att[1:]/att[:-1] # alpha (no change prob)
     ctt = np.arange(0, time_step)/(time_step-1)*(ctt_T - ctt_1) + ctt_1 # accumulate (0 ~ 0.9999)
-    ctt = np.concatenate(([0], ctt)) # \bar{gamma}
+    ctt = np.concatenate(([0], ctt)) # this is \bar{gamma}
     one_minus_ctt = 1 - ctt
     one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
-    ct = 1-one_minus_ct # gamma (random mask prob)
-    bt = (1-at-ct)/N # beta (random resample prob)
+    ct = 1-one_minus_ct # Think this is gamma (random mask prob)
+    bt = (1-at-ct)/N # Think this is beta (random resample prob)
     att = np.concatenate((att[1:], [1])) # last 1 is for mask
     ctt = np.concatenate((ctt[1:], [0])) # last 0 is for mask
-    btt = (1-att-ctt)/N # \bar{beta}
+    btt = (1-att-ctt)/N # Think this is \bar{beta}
     return at, bt, ct, att, btt, ctt
-
 
 class DiscreteDiffusion(nn.Module):
     def __init__(
@@ -121,9 +121,9 @@ class DiscreteDiffusion(nn.Module):
         if alpha_init_type == "alpha1":
             at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
             atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-        elif alpha_init_type == "alpha2":
-            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.9) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, att_T=0.099999, ctt_T=0.9) # (t,)
+        elif alpha_init_type == "alpha3":
+            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.8) # (t,)
+            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
         else:
             print("alpha_init_type is Wrong !! ")
         
@@ -256,7 +256,7 @@ class DiscreteDiffusion(nn.Module):
         log_probs = torch.cat( 
             [
                 log_add_exp(log_x_start[:,:-1,:]+log_cumprod_at, log_cumprod_bt), # makes [b, b, ..., a+b, b, b, ...] # with bars on each element (cumulative)
-                log_add_exp(log_x_start[:,-1:,:]+log_1_min_cumprod_ct, log_cumprod_ct) # makes [c] (bar) for all and [1] when one-hot vector indicates the image is masked 
+                log_add_exp(log_x_start[:,-1:,:]+log_1_min_cumprod_ct, log_cumprod_ct) # makes [c] (bar) for all and [1] when one-hot vector indicates the image is masked (but will it be?)
             ],
             dim=1
         ) # B x state x F*T
@@ -280,7 +280,7 @@ class DiscreteDiffusion(nn.Module):
         log_probs = torch.cat( 
             [
                 log_add_exp(log_x_start[:,:-1,:]+log_cumprod_atr, log_cumprod_btr), # makes [b, b, ..., a+b, b, b, ...] # with bars on each element (cumulative)
-                log_add_exp(log_x_start[:,-1:,:]+log_1_min_cumprod_ctr, log_cumprod_ctr) # makes [c] (bar) for all and [1] when one-hot vector indicates the image is masked 
+                log_add_exp(log_x_start[:,-1:,:]+log_1_min_cumprod_ctr, log_cumprod_ctr) # makes [c] (bar) for all and [1] when one-hot vector indicates the image is masked (but will it be?)
             ],
             dim=1
         ) # B x state x F*T

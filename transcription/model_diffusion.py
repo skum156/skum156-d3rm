@@ -186,12 +186,4 @@ class LSTM_NATTEN(nn.Module):
                 x, _, t = layers(x, cond, t)
                 x = x + x_res
 
-        # # if use natten2d
-        # elif self.natten_dir == '2d' and not self.cross_condition == 'self':
-        #     x = x.reshape(B, 88, T, -1).permute(0,2,1,3) # B x T x 88 x H
-        #     for layers in self.na:
-        #         x_res = x
-        #         x, t = layers(x, t)
-        #         x = x + x_res
-
         return x
