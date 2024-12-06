@@ -2,7 +2,7 @@
   "config_file": "config.json",
   "amp": false,
   "inference_interval": 10000,
-  "wandb": true,
+  "wandb": false,
   "local_model_name": "NAR",
   "lm_model_name": "LSTM_NATTEN",
   "n_mels": 495,
@@ -33,7 +33,7 @@
       "attn_type": "self",
       "label_seq_len": 27544,
       "timestep_type": "adalayernorm",
-      "cross_condition": "cross",
+      "cross_condition": "self",
       "trained_encoder": true,
       "encoder_type": "NAR"
     },
