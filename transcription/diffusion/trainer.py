@@ -11,7 +11,6 @@ from torch import nn
 import torch.nn.functional as F
 import importlib
 
-# from image_synthesis.utils.misc import instantiate_from_config
 import numpy as np
 
 from inspect import isfunction
@@ -60,83 +59,7 @@ def log_onehot_to_index(log_x):
     return log_x.argmax(1)
 
 
-# def alpha_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 0.000009, ctt_T = 0.99999):
 def alpha_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 0.000009, ctt_T = 0.99999):
-    att = np.arange(0, time_step)/(time_step-1)*(att_T - att_1) + att_1 # accumulate (0.9999 ~ 0)
-    att = np.concatenate(([1], att)) 
-    at = att[1:]/att[:-1] # alpha (no change prob)
-    ctt = np.arange(0, time_step)/(time_step-1)*(ctt_T - ctt_1) + ctt_1 # accumulate (0 ~ 0.9999)
-    ctt = np.concatenate(([0], ctt)) # this is \bar{gamma}
-    one_minus_ctt = 1 - ctt
-    one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
-    ct = 1-one_minus_ct # Think this is gamma (random mask prob)
-    bt = (1-at-ct)/N # Think this is beta (random resample prob)
-    att = np.concatenate((att[1:], [1])) # last 1 is for mask
-    ctt = np.concatenate((ctt[1:], [0])) # last 0 is for mask
-    btt = (1-att-ctt)/N # Think this is \bar{beta}
-    return at, bt, ct, att, btt, ctt
-
-def get_alpha_schedules(num_steps, N=5, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 0.000009, ctt_T = 0.99999):
-    att = np.linspace(att_1, att_T, num_steps+1, dtype=np.float64) # accumulate (0.9999 ~ 0)
-    at = att[1:]/att[:-1] # alpha (no change prob)
-    ctt = np.linspace(ctt_1, ctt_T, num_steps+1, dtype=np.float64) # accumulate (0.9999 ~ 0)
-    one_minus_ctt = 1 - ctt
-    one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
-    ct = 1-one_minus_ct # Think this is gamma (random mask prob)
-    bt = (1-at-ct)/N # Think this is beta (random resample prob)
-    # calculate btt from bt
-    btt = np.zeros_like(att)
-    btt = (1-att-ctt)/N # Think this is beta (random resample prob)
-    # print(btt)
-    return at, bt, ct, att, btt, ctt
-
-def get_hounsu_schedules(time_step, N=5, at_1 = 0.9999, at_T = 0.89, ct_1 = 0.00009, ct_T = 0.1):
-    # obtain btt from bt_1, bt_T
-    at = np.linspace(at_1, at_T, time_step, dtype=np.float64) # accumulate (0.9999 ~ 0)
-    att = np.zeros((at.shape[0]+1,), dtype=np.float64)
-    att[0] = at[0]
-    for i in range(1, len(att)):
-        att[i] = att[i-1] * at[i-1]
-    # obtain ctt from ct_1, ct_T
-    ct = np.linspace(ct_1, ct_T, time_step, dtype=np.float64) # accumulate (0.9999 ~ 0)
-    ctt = np.zeros((at.shape[0]+1,), dtype=np.float64)
-    ctt[0] = ct[0]
-    prod = 1 - ct[0]
-    for i in range(1, len(ctt)):
-        prod = prod * (1-ct[i-1])
-        ctt[i] = 1 - prod
-    bt = (1-ct-at)/N
-    btt = (1-ctt-att)/N
-    return at, bt, ct, att, btt, ctt
-
-# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99, at_T = 0.19, ct_1 = 0.001, ct_T = 0.7):
-# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.999, at_T = 0.8999, ct_1 = 0.0001, ct_T = 0.1):
-# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.9999, at_T = 0.89, ct_1 = 0.00009, ct_T = 0.1, a_pow=0.1, c_pow=2.5): # better schedule, 240728
-# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.80, ct_1 = 0.000009, ct_T = 0.199999, a_pow=1.7, c_pow=4): # better schedule
-# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.70, ct_1 = 0.000009, ct_T = 0.299999, a_pow=1.7, c_pow=4): # better schedule
-# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.70, ct_1 = 0.000009, ct_T = 0.299999, a_pow=2.0, c_pow=2.25): # beta max 0.02, ct schedule bit different
-def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.70, ct_1 = 0.000009, ct_T = 0.299999, a_pow=2.4, c_pow=2.70): # beta max 0.02, ct schedule 대칭
-# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.70, ct_1 = 0.000009, ct_T = 0.299999, a_pow=4.63, c_pow=4.9): # beta max 0.01, at, ct schedule 비대칭
-    # obtain btt from bt_1, bt_T
-    at = (np.linspace(0, 1, time_step, dtype=np.float64)**a_pow)*(at_T - at_1) + at_1 # accumulate (0.9999 ~ 0)
-    att = np.zeros((at.shape[0]+1,), dtype=np.float64)
-    att[0] = at[0]
-    for i in range(1, len(att)):
-        att[i] = att[i-1] * at[i-1]
-    
-    # obtain ctt from ct_1, ct_T
-    ct = (np.linspace(0, 1, time_step, dtype=np.float64)**c_pow)*(ct_T - ct_1) + ct_1 # accumulate (0.9999 ~ 0)
-    ctt = np.zeros((at.shape[0]+1,), dtype=np.float64)
-    ctt[0] = ct[0]
-    prod = 1 - ct[0]
-    for i in range(1, len(ctt)):
-        prod = prod * (1-ct[i-1])
-        ctt[i] = 1 - prod
-    bt = (1-ct-at)/N
-    btt = (1-ctt-att)/N
-    return at, bt, ct, att, btt, ctt
-
-def reverse_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.099999, ctt_1 = 0.000009, ctt_T = 0.9):
     att = np.arange(0, time_step)/(time_step-1)*(att_T - att_1) + att_1 # accumulate (0.9999 ~ 0)
     att = np.concatenate(([1], att)) 
     at = att[1:]/att[:-1] # alpha (no change prob)
@@ -148,7 +71,36 @@ def reverse_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.099999, ctt_1 
     bt = (1-at-ct)/N # This is beta (random resample prob)
     att = np.concatenate((att[1:], [1])) # last 1 is for mask
     ctt = np.concatenate((ctt[1:], [0])) # last 0 is for mask
-    btt = (1-att-ctt)/N # Think this is \bar{beta}
+    btt = (1-att-ctt)/N # This is \bar{beta}
+    return at, bt, ct, att, btt, ctt
+
+def get_alpha_schedules(num_steps, N=5, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 0.000009, ctt_T = 0.99999):
+    att = np.linspace(att_1, att_T, num_steps+1, dtype=np.float64) # accumulate (0.9999 ~ 0)
+    at = att[1:]/att[:-1] # alpha (no change prob)
+    ctt = np.linspace(ctt_1, ctt_T, num_steps+1, dtype=np.float64) # accumulate (0.9999 ~ 0)
+    one_minus_ctt = 1 - ctt
+    one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
+    ct = 1-one_minus_ct 
+    bt = (1-at-ct)/N 
+    # calculate btt from bt
+    btt = np.zeros_like(att)
+    btt = (1-att-ctt)/N 
+    # print(btt)
+    return at, bt, ct, att, btt, ctt
+
+def reverse_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.099999, ctt_1 = 0.000009, ctt_T = 0.9):
+    att = np.arange(0, time_step)/(time_step-1)*(att_T - att_1) + att_1 # accumulate (0.9999 ~ 0)
+    att = np.concatenate(([1], att)) 
+    at = att[1:]/att[:-1] # alpha (no change prob)
+    ctt = np.arange(0, time_step)/(time_step-1)*(ctt_T - ctt_1) + ctt_1 # accumulate (0 ~ 0.9999)
+    ctt = np.concatenate(([0], ctt)) # this is \bar{gamma}
+    one_minus_ctt = 1 - ctt
+    one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
+    ct = 1-one_minus_ct 
+    bt = (1-at-ct)/N 
+    att = np.concatenate((att[1:], [1])) # last 1 is for mask
+    ctt = np.concatenate((ctt[1:], [0])) # last 0 is for mask
+    btt = (1-att-ctt)/N # This is \bar{beta}
     return at, bt, ct, att, btt, ctt
 
 
@@ -194,27 +146,9 @@ class DiscreteDiffusion(nn.Module):
         if alpha_init_type == "alpha1":
             at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
             atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-        elif alpha_init_type == "alpha2":
+        elif alpha_init_type == "alpha2": # When ctt_T is 0.9
             at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.9) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, att_T=0.099999, ctt_T=0.9) # (t,)
-        elif alpha_init_type == "alpha3":
-            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.8) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-        elif alpha_init_type == "alpha3.5":
-            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.7) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-            # atr, btr, ctr, attr, bttr, cttr = reverse_schedule(self.num_timesteps, N=self.num_classes-1, att_T=0.299999, ctt_T=0.7) # (t,)
-        elif alpha_init_type == "alpha0.6":
-            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.6) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-        elif alpha_init_type == "alpha0.4":
-            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.4) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-        elif alpha_init_type == "alpha0.2":
-            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.2) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-        elif alpha_init_type == "alpha4":
-            at, bt, ct, att, btt, ctt = get_hounsu_powerschedules(self.num_timesteps, N=self.num_classes-1) # (t,)
+            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, att_T=0.099999, ctt_T=0.9) # reverse sammpling
         else:
             print("alpha_init_type is Wrong !! ")
         
@@ -364,8 +298,8 @@ class DiscreteDiffusion(nn.Module):
 
         log_probs = torch.cat( 
             [
-                log_add_exp(log_x_start[:,:-1,:]+log_cumprod_atr, log_cumprod_btr), # makes [b, b, ..., a+b, b, b, ...] # with bars on each element (cumulative)
-                log_add_exp(log_x_start[:,-1:,:]+log_1_min_cumprod_ctr, log_cumprod_ctr) # makes [c] (bar) for all and [1] when one-hot vector indicates the image is masked (but will it be?)
+                log_add_exp(log_x_start[:,:-1,:]+log_cumprod_atr, log_cumprod_btr), 
+                log_add_exp(log_x_start[:,-1:,:]+log_1_min_cumprod_ctr, log_cumprod_ctr) 
             ],
             dim=1
         ) # B x state x F*T
@@ -496,7 +430,7 @@ class DiscreteDiffusion(nn.Module):
 
     @torch.no_grad()
     def p_sample(self, log_x, cond_audio, t, cond_drop_prob=None):               # sample q(xt-1) for next step from xt, actually is p(xt-1|xt)
-        model_log_prob = self.p_pred(log_x, cond_audio, t) # TODO : onset, reonset -> 2, 4 (0~4)
+        model_log_prob = self.p_pred(log_x, cond_audio, t) # onset, reonset -> 2, 4 (0~4)
         if self.onset_suppress: # suppress onset, offsets when sampling
             model_log_prob[:, 2, :] = model_log_prob[:, 2, :] * (1 + self.onset_suppress)
             model_log_prob[:, 4, :] = model_log_prob[:, 4, :] * (1 + self.onset_suppress)
@@ -546,7 +480,7 @@ class DiscreteDiffusion(nn.Module):
         t, pt = self.sample_time(b, device, 'importance')
 
         # DALLE encodes image to 2887+1(mask) tokens (=self.num_classes)
-        log_x_start = index_to_log_onehot(x_start, self.num_classes) # but why log?
+        log_x_start = index_to_log_onehot(x_start, self.num_classes) 
         # x0 -> xt
         log_xt = self.q_sample(log_x_start=log_x_start, t=t) # B x 6 x L , discretely-noised log one-hot vector
         xt = log_onehot_to_index(log_xt)
@@ -688,7 +622,7 @@ class DiscreteDiffusion(nn.Module):
                     if visualize_denoising:
                         labels.append(log_z.argmax(1).cpu().numpy())
 
-        else: # TODO : fill this. check whether there are no mistake in VQ diffusion
+        else: 
             raise ValueError("Not implemented yet, but what is this for anyway?")
         
 
@@ -698,72 +632,3 @@ class DiscreteDiffusion(nn.Module):
         if return_logits:
             output['logits'] = torch.exp(log_z)
         return output, labels
-
-
-    # TODO : work on this
-    def sample_fast(
-            self,
-            condition_token,
-            condition_mask,
-            condition_embed,
-            label_token = None,
-            filter_ratio = 0.5,
-            temperature = 1.0,
-            return_att_weight = False,
-            return_logits = False,
-            label_logits = None,
-            print_log = True,
-            skip_step = 1,
-            **kwargs):
-        input = {'condition_token': condition_token,
-                'label_token': label_token, 
-                'condition_mask': condition_mask,
-                'condition_embed_token': condition_embed,
-                'label_logits': label_logits,
-                }
-
-        batch_size = input['condition_token'].shape[0]
-        device = self.log_at.device
-        start_step = int(self.num_timesteps * filter_ratio)
-
-        # get cont_emb and cond_audio
-        if label_token != None:
-            sample_image = input['label_token'].type_as(input['label_token'])
-
-        if self.condition_emb is not None:
-            with torch.no_grad():
-                cond_emb = self.condition_emb(input['condition_token']) # B x Ld x D   #256*1024
-            cond_emb = cond_emb.float()
-        else: # share condition embeding with label
-            cond_emb = input['condition_embed_token'].float()
-
-        assert start_step == 0
-        # use full mask sample
-        zero_logits = torch.zeros((batch_size, self.num_classes-1, self.shape), device=device)
-        one_logits = torch.ones((batch_size, 1, self.shape), device=device)
-        mask_logits = torch.cat((zero_logits, one_logits), dim=1)
-        log_z = torch.log(mask_logits)
-        start_step = self.num_timesteps
-        with torch.no_grad():
-            # just one-step fast sampling..?
-            # skip_step = 1
-            diffusion_list = [index for index in range(start_step-1, -1, -1-skip_step)]
-            if diffusion_list[-1] != 0:
-                diffusion_list.append(0)
-            # for diffusion_index in range(start_step-1, -1, -1):
-            for diffusion_index in diffusion_list:
-                t = torch.full((batch_size,), diffusion_index, device=device, dtype=torch.long)
-                log_x_recon = self.predict_start(log_z, cond_emb, t)
-                if diffusion_index > skip_step:
-                    model_log_prob = self.q_posterior(log_x_start=log_x_recon, log_x_t=log_z, t=t-skip_step)
-                else:
-                    model_log_prob = self.q_posterior(log_x_start=log_x_recon, log_x_t=log_z, t=t)
-
-                log_z = self.log_sample_categorical(model_log_prob)
-
-        label_token = log_onehot_to_index(log_z)
-        
-        output = {'label_token': label_token}
-        if return_logits:
-            output['logits'] = torch.exp(log_z)
-        return output

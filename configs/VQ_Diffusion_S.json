@@ -15,7 +15,7 @@
     "params": {
       "customized_transition_matrix": false,
       "diffusion_step": 100,
-      "alpha_init_type": "alpha0.2",
+      "alpha_init_type": "alpha2",
       "auxiliary_loss_weight": 5.0e-4,
       "adaptive_auxiliary_loss": true,
       "mask_weight": [
@@ -27,7 +27,7 @@
       "onset_weight_kl": false,
       "no_mask": false,
       "sample_from_fully_masked": true,
-      "reverse_sampling": false
+      "reverse_sampling": true
     }
   },
   "model_config": {
