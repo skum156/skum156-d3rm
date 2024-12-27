@@ -76,6 +76,82 @@ def alpha_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 
     btt = (1-att-ctt)/N # Think this is \bar{beta}
     return at, bt, ct, att, btt, ctt
 
+def get_alpha_schedules(num_steps, N=5, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 0.000009, ctt_T = 0.99999):
+    att = np.linspace(att_1, att_T, num_steps+1, dtype=np.float64) # accumulate (0.9999 ~ 0)
+    at = att[1:]/att[:-1] # alpha (no change prob)
+    ctt = np.linspace(ctt_1, ctt_T, num_steps+1, dtype=np.float64) # accumulate (0.9999 ~ 0)
+    one_minus_ctt = 1 - ctt
+    one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
+    ct = 1-one_minus_ct # Think this is gamma (random mask prob)
+    bt = (1-at-ct)/N # Think this is beta (random resample prob)
+    # calculate btt from bt
+    btt = np.zeros_like(att)
+    btt = (1-att-ctt)/N # Think this is beta (random resample prob)
+    # print(btt)
+    return at, bt, ct, att, btt, ctt
+
+def get_hounsu_schedules(time_step, N=5, at_1 = 0.9999, at_T = 0.89, ct_1 = 0.00009, ct_T = 0.1):
+    # obtain btt from bt_1, bt_T
+    at = np.linspace(at_1, at_T, time_step, dtype=np.float64) # accumulate (0.9999 ~ 0)
+    att = np.zeros((at.shape[0]+1,), dtype=np.float64)
+    att[0] = at[0]
+    for i in range(1, len(att)):
+        att[i] = att[i-1] * at[i-1]
+    # obtain ctt from ct_1, ct_T
+    ct = np.linspace(ct_1, ct_T, time_step, dtype=np.float64) # accumulate (0.9999 ~ 0)
+    ctt = np.zeros((at.shape[0]+1,), dtype=np.float64)
+    ctt[0] = ct[0]
+    prod = 1 - ct[0]
+    for i in range(1, len(ctt)):
+        prod = prod * (1-ct[i-1])
+        ctt[i] = 1 - prod
+    bt = (1-ct-at)/N
+    btt = (1-ctt-att)/N
+    return at, bt, ct, att, btt, ctt
+
+# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99, at_T = 0.19, ct_1 = 0.001, ct_T = 0.7):
+# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.999, at_T = 0.8999, ct_1 = 0.0001, ct_T = 0.1):
+# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.9999, at_T = 0.89, ct_1 = 0.00009, ct_T = 0.1, a_pow=0.1, c_pow=2.5): # better schedule, 240728
+# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.80, ct_1 = 0.000009, ct_T = 0.199999, a_pow=1.7, c_pow=4): # better schedule
+# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.70, ct_1 = 0.000009, ct_T = 0.299999, a_pow=1.7, c_pow=4): # better schedule
+# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.70, ct_1 = 0.000009, ct_T = 0.299999, a_pow=2.0, c_pow=2.25): # beta max 0.02, ct schedule bit different
+def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.70, ct_1 = 0.000009, ct_T = 0.299999, a_pow=2.4, c_pow=2.70): # beta max 0.02, ct schedule 대칭
+# def get_hounsu_powerschedules(time_step, N=5, at_1 = 0.99999, at_T = 0.70, ct_1 = 0.000009, ct_T = 0.299999, a_pow=4.63, c_pow=4.9): # beta max 0.01, at, ct schedule 비대칭
+    # obtain btt from bt_1, bt_T
+    at = (np.linspace(0, 1, time_step, dtype=np.float64)**a_pow)*(at_T - at_1) + at_1 # accumulate (0.9999 ~ 0)
+    att = np.zeros((at.shape[0]+1,), dtype=np.float64)
+    att[0] = at[0]
+    for i in range(1, len(att)):
+        att[i] = att[i-1] * at[i-1]
+    
+    # obtain ctt from ct_1, ct_T
+    ct = (np.linspace(0, 1, time_step, dtype=np.float64)**c_pow)*(ct_T - ct_1) + ct_1 # accumulate (0.9999 ~ 0)
+    ctt = np.zeros((at.shape[0]+1,), dtype=np.float64)
+    ctt[0] = ct[0]
+    prod = 1 - ct[0]
+    for i in range(1, len(ctt)):
+        prod = prod * (1-ct[i-1])
+        ctt[i] = 1 - prod
+    bt = (1-ct-at)/N
+    btt = (1-ctt-att)/N
+    return at, bt, ct, att, btt, ctt
+
+def reverse_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.099999, ctt_1 = 0.000009, ctt_T = 0.9):
+    att = np.arange(0, time_step)/(time_step-1)*(att_T - att_1) + att_1 # accumulate (0.9999 ~ 0)
+    att = np.concatenate(([1], att)) 
+    at = att[1:]/att[:-1] # alpha (no change prob)
+    ctt = np.arange(0, time_step)/(time_step-1)*(ctt_T - ctt_1) + ctt_1 # accumulate (0 ~ 0.9999)
+    ctt = np.concatenate(([0], ctt)) # this is \bar{gamma}
+    one_minus_ctt = 1 - ctt
+    one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
+    ct = 1-one_minus_ct # This is gamma (random mask prob)
+    bt = (1-at-ct)/N # This is beta (random resample prob)
+    att = np.concatenate((att[1:], [1])) # last 1 is for mask
+    ctt = np.concatenate((ctt[1:], [0])) # last 0 is for mask
+    btt = (1-att-ctt)/N # Think this is \bar{beta}
+    return at, bt, ct, att, btt, ctt
+
+
 class DiscreteDiffusion(nn.Module):
     def __init__(
         self,
@@ -91,9 +167,6 @@ class DiscreteDiffusion(nn.Module):
     ):
         super().__init__()
 
-        # self.condition_emb = 
-        # self.condition_dim = self.condition_emb.embed_dim
-       
         self.model = model
         self.label_seq_len = config.model_config['params']['label_seq_len']
         self.amp = False
@@ -121,9 +194,27 @@ class DiscreteDiffusion(nn.Module):
         if alpha_init_type == "alpha1":
             at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
             atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
+        elif alpha_init_type == "alpha2":
+            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.9) # (t,)
+            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, att_T=0.099999, ctt_T=0.9) # (t,)
         elif alpha_init_type == "alpha3":
             at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.8) # (t,)
             atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
+        elif alpha_init_type == "alpha3.5":
+            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.7) # (t,)
+            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
+            # atr, btr, ctr, attr, bttr, cttr = reverse_schedule(self.num_timesteps, N=self.num_classes-1, att_T=0.299999, ctt_T=0.7) # (t,)
+        elif alpha_init_type == "alpha0.6":
+            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.6) # (t,)
+            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
+        elif alpha_init_type == "alpha0.4":
+            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.4) # (t,)
+            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
+        elif alpha_init_type == "alpha0.2":
+            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.2) # (t,)
+            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
+        elif alpha_init_type == "alpha4":
+            at, bt, ct, att, btt, ctt = get_hounsu_powerschedules(self.num_timesteps, N=self.num_classes-1) # (t,)
         else:
             print("alpha_init_type is Wrong !! ")
         
@@ -243,20 +334,17 @@ class DiscreteDiffusion(nn.Module):
         '''
         log_x_start shape : (B, 2888(=one-hot token), 1024(=label_len))
         '''
-        # log_x_start can be onehot or not
-        # if t[0] == -1:
-        #     print(t)
         t = (t + (self.num_timesteps + 1))%(self.num_timesteps + 1)
-        log_cumprod_at = extract(self.log_cumprod_at, t, log_x_start.shape)         # log \bar{\alpha},  B x 1 x 1
-        log_cumprod_bt = extract(self.log_cumprod_bt, t, log_x_start.shape)         # log \bar{\beta},  B x 1 x 1
-        log_cumprod_ct = extract(self.log_cumprod_ct, t, log_x_start.shape)         # log \bar{\gamma}
-        log_1_min_cumprod_ct = extract(self.log_1_min_cumprod_ct, t, log_x_start.shape)       # 1-ct~
+        log_cumprod_at = extract(self.log_cumprod_at, t, log_x_start.shape)        
+        log_cumprod_bt = extract(self.log_cumprod_bt, t, log_x_start.shape)        
+        log_cumprod_ct = extract(self.log_cumprod_ct, t, log_x_start.shape)        
+        log_1_min_cumprod_ct = extract(self.log_1_min_cumprod_ct, t, log_x_start.shape) 
         
 
         log_probs = torch.cat( 
             [
-                log_add_exp(log_x_start[:,:-1,:]+log_cumprod_at, log_cumprod_bt), # makes [b, b, ..., a+b, b, b, ...] # with bars on each element (cumulative)
-                log_add_exp(log_x_start[:,-1:,:]+log_1_min_cumprod_ct, log_cumprod_ct) # makes [c] (bar) for all and [1] when one-hot vector indicates the image is masked (but will it be?)
+                log_add_exp(log_x_start[:,:-1,:]+log_cumprod_at, log_cumprod_bt),
+                log_add_exp(log_x_start[:,-1:,:]+log_1_min_cumprod_ct, log_cumprod_ct) 
             ],
             dim=1
         ) # B x state x F*T
@@ -267,9 +355,6 @@ class DiscreteDiffusion(nn.Module):
         '''
         log_x_start shape : (B, 2888(=one-hot token), 1024(=label_len))
         '''
-        # log_x_start can be onehot or not
-        # if t[0] == -1:
-        #     print(t)
         t = (t + (self.num_timesteps + 1))%(self.num_timesteps + 1)
         log_cumprod_atr = extract(self.log_cumprod_atr, t, log_x_start.shape)         # log \bar{\alpha},  B x 1 x 1
         log_cumprod_btr = extract(self.log_cumprod_btr, t, log_x_start.shape)         # log \bar{\beta},  B x 1 x 1
@@ -526,62 +611,6 @@ class DiscreteDiffusion(nn.Module):
     @property
     def device(self):
         return self.model.to_logits[-1].weight.device
-
-    def parameters(self, recurse=True, name=None):
-        """
-        Following minGPT:
-        This long function is unfortunately doing something very simple and is being very defensive:
-        We are separating out all parameters of the model into two buckets: those that will experience
-        weight decay for regularization and those that won't (biases, and layernorm/embedding weights).
-        We are then returning the PyTorch optimizer object.
-        """
-        # return super().parameters(recurse=True)
-        if name is None or name == 'none':
-            return super().parameters(recurse=recurse)
-        else:
-            # separate out all parameters to those that will and won't experience regularizing weight decay
-            print("GPTLikeTransformer: get parameters by the overwrite method!")
-            decay = set()
-            no_decay = set()
-            whitelist_weight_modules = (torch.nn.Linear, )
-            blacklist_weight_modules = (torch.nn.LayerNorm, torch.nn.Embedding)
-            for mn, m in self.named_modules():
-                for pn, p in m.named_parameters():
-                    fpn = '%s.%s' % (mn, pn) if mn else pn # full param name
-
-                    if pn.endswith('bias'):
-                        # all biases will not be decayed
-                        no_decay.add(fpn)
-                    elif pn.endswith('weight') and isinstance(m, whitelist_weight_modules):
-                        # weights of whitelist modules will be weight decayed
-                        decay.add(fpn)
-                    elif pn.endswith('weight') and isinstance(m, blacklist_weight_modules):
-                        # weights of blacklist modules will NOT be weight decayed
-                        no_decay.add(fpn)
-            # special case the position embedding parameter as not decayed
-            module_name = ['condition_emb', 'label_emb']
-            pos_emb_name = ['pos_emb', 'width_emb', 'height_emb', 'pad_emb', 'token_type_emb']
-            for mn in module_name:
-                if hasattr(self, mn) and getattr(self, mn) is not None:
-                    for pn in pos_emb_name:
-                        if hasattr(getattr(self, mn), pn):
-                            if isinstance(getattr(getattr(self, mn), pn), torch.nn.Parameter):
-                                no_decay.add('{}.{}'.format(mn, pn))
-
-            # validate that we considered every parameter
-            param_dict = {pn: p for pn, p in self.model.named_parameters()}# if p.requires_grad} 
-            inter_params = decay & no_decay
-            union_params = decay | no_decay
-            assert len(inter_params) == 0, "parameters %s made it into both decay/no_decay sets!" % (str(inter_params), )
-            assert len(param_dict.keys() - union_params) == 0, "parameters %s were not separated into either decay/no_decay set!" \
-                                                        % (str(param_dict.keys() - union_params), )
-
-            # create the pytorch optimizer object
-            optim_groups = [
-                {"params": [param_dict[pn] for pn in sorted(list(decay))], "weight_decay": 0.01},
-                {"params": [param_dict[pn] for pn in sorted(list(no_decay))], "weight_decay": 0.0},
-            ]
-            return optim_groups
 
     def forward(
             self, 

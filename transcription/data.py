@@ -197,6 +197,9 @@ class PianoSampleDataset(Dataset):
         result['last_onset_time'] = last_onset_time.div_(self.max_last)
         result['last_onset_vel'] = last_onset_vel.div_(128)
 
+        print(result['audio'].shape)   
+        print(result['label'].shape)
+
         return result
 
     def sort_by_length(self):

@@ -18,7 +18,10 @@
       "alpha_init_type": "alpha0.2",
       "auxiliary_loss_weight": 5.0e-4,
       "adaptive_auxiliary_loss": true,
-      "mask_weight": [ 1, 1 ],
+      "mask_weight": [
+        1,
+        1
+      ],
       "classifier_free_guidance": false,
       "onset_suppress_sample": false,
       "onset_weight_kl": false,
@@ -40,8 +43,26 @@
     "lstm_natten_config": {
       "n_unit": 48,
       "n_layers": 8,
-      "window": [ 3, 3, 3, 3, 3, 3, 3, 3 ],
-      "dilation": [ 1, 2, 4, 8, 1, 2, 4, 8 ]
+      "window": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "dilation": [
+        1,
+        2,
+        4,
+        8,
+        1,
+        2,
+        4,
+        8
+      ]
     },
     "label_emb_config": {
       "num_embed": 5,
