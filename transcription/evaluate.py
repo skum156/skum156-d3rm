@@ -14,9 +14,9 @@ from mir_eval.multipitch import evaluate as evaluate_frames
 from mir_eval.transcription import precision_recall_f1_overlap as evaluate_notes
 from mir_eval.transcription_velocity import precision_recall_f1_overlap as evaluate_notes_with_velocity
 
-from .constants import HOP, SR, MIN_MIDI
-from .decode import extract_notes, notes_to_frames
-from .data import MAESTRO, MAESTRO_V3
+from transcription.constants import HOP, SR, MIN_MIDI
+from transcription.decode import extract_notes, notes_to_frames
+from transcription.dataset import MAESTRO, MAESTRO_V3
 
 #  BASE       = ['off', 'offset', 'onset', 'sustain', 'reonset']
 eps = sys.float_info.epsilon

@@ -1,0 +1,141 @@
+# pytorch_lightning==2.5.0.post0
+seed_everything: 23
+trainer:
+  accelerator: gpu
+  strategy: ddp
+  devices: 2
+  num_nodes: 1
+  precision: null
+  logger: null
+  callbacks: null
+  fast_dev_run: false
+  max_epochs: null
+  min_epochs: null
+  max_steps: 8000000
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: 5000
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: null
+  log_every_n_steps: 50
+  enable_checkpointing: null
+  enable_progress_bar: null
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: norm
+  deterministic: null
+  benchmark: true
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+model:
+  encoder:
+    class_path: transcription.encoder.ARModel
+    init_args:
+      use_vel: false
+  decoder:
+    class_path: transcription.decoder.TransModel
+    init_args:
+      label_embed_dim: 4
+      lstm_dim: 48
+      n_layers: 8
+      window:
+      - 3
+      - 3
+      - 3
+      - 3
+      - 3
+      - 3
+      - 3
+      - 3
+      dilation:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 1
+      - 2
+      - 4
+      - 8
+      condition_method: self
+      diffusion_step: 100
+      timestep_type: adalayernorm
+      natten_direction: 2d
+      spatial_size:
+      - 313
+      - 88
+      num_state: 5
+      classifier_free_guidance: false
+  encoder_parameters: pretrained
+  pretrained_encoder_path: model_170k_0.9063_nonar.pt
+  freeze_encoder: false
+  test_save_path: ./results/2024-12-28T15-15-54
+  use_ema: true
+  ema_decay: 0.99
+  ema_update_interval: 25
+  optimizer:
+    class_path: torch.optim.AdamW
+    init_args:
+      lr: 0.001
+      betas:
+      - 0.9
+      - 0.96
+      eps: 1.0e-08
+      weight_decay: 0.045
+      amsgrad: false
+      maximize: false
+      foreach: null
+      capturable: false
+      differentiable: false
+      fused: null
+  scheduler:
+    class_path: lightning.pytorch.cli.ReduceLROnPlateau
+    init_args:
+      monitor: train/diffusion_loss
+      mode: min
+      factor: 0.8
+      patience: 25000
+      threshold: 0.1
+      threshold_mode: rel
+      cooldown: 0
+      min_lr: 1.0e-05
+      eps: 1.0e-08
+      verbose: false
+  label_seq_len: 27544
+  diffusion_step: 100
+  gamma_bar_T: 0.9
+  auxiliary_loss_weight: 0.0005
+  adaptive_auxiliary_loss: true
+  mask_weight:
+  - 1.0
+  - 1.0
+  classifier_free_guidance: false
+  onset_suppress_sample: false
+  onset_weight_kl: false
+  no_mask: false
+  sample_from_fully_masked: true
+  reverse_sampling: true
+data:
+  data_dir: ./data/maestro-v3.0.0
+  train_seq_len: 160256
+  valid_seq_len: 160256
+  batch_size: 4
+  hop_size: 512
+  num_workers: 8
+debug: false
+wandb: true
+optimizer: null
+lr_scheduler: null
+ckpt_path: null

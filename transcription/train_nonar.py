@@ -31,7 +31,7 @@ from adabelief_pytorch import AdaBelief
 
 from .model import NonARModel
 from .constants import HOP
-from .data import MAESTRO_V3, MAESTRO, MAPS, EmotionDataset, SMD, ViennaCorpus
+from .dataset import MAESTRO_V3, MAESTRO, MAPS, EmotionDataset, SMD, ViennaCorpus
 from .loss import FocalLoss
 from .evaluate import evaluate
 from .utils import summary, CustomSampler

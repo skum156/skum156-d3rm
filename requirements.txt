@@ -1,3 +1,5 @@
+# Python 3.9
+
 wandb
 adabelief_pytorch
 nnaudio==0.3.2
@@ -9,4 +11,8 @@ termcolor
 torch==2.1.2
 torchaudio==2.1.2
 torchvision==0.16.2
-natten==0.15.1+torch210cu121 -f https://shi-labs.com/natten/wheels/
+lightning
+numpy==1.25.2
+
+# Install manually
+# natten==0.15.1+torch210cu121 -f https://shi-labs.com/natten/wheels/

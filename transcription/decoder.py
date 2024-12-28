@@ -1,8 +1,7 @@
 import torch as th
 from torch import nn
 
-from .diffusion.natten_diffusion import NeighborhoodAttention2D_diffusion, NeighborhoodAttention1D_diffusion, NeighborhoodCrossAttention2D_diffusion, NeighborhoodAttention2D_diffusion_encoder
-from .encoder import load_pretrain
+from transcription.diffusion.natten_diffusion import NeighborhoodAttention2D_diffusion, NeighborhoodAttention1D_diffusion, NeighborhoodCrossAttention2D_diffusion, NeighborhoodAttention2D_diffusion_encoder
 from typing import List
 
 
@@ -10,43 +9,57 @@ class TransModel(nn.Module):
     def __init__(self,
                 label_embed_dim: int,
                 lstm_dim: int,
-                natten_layers: int,
+                n_layers: int,
                 window: List[int],
                 dilation: List[int],
                 condition_method: str,
-                diffusion_step: int
+                diffusion_step: int,
+                timestep_type: str,
+                natten_direction: str,
+                spatial_size: List[int],
+                num_state: int = 5,
+                classifier_free_guidance: bool = False,
                  ):
         super().__init__()
-        self.local_model_name = encoder_type
         # self.hidden_per_pitch = config.hidden_per_pitch
         self.label_embed_dim = label_embed_dim
-        self.feature_embed_dim = 128 # from pretrained model
-        self.trained_encoder = config.model_config["params"]["trained_encoder"]
+        features_embed_dim = 128 # from pretrained model
         self.n_unit = lstm_dim
-        self.n_layers = natten_layers
+        self.n_layers = n_layers
         self.window = window
         self.cross_condition = condition_method
         self.diffusion_step = diffusion_step
+        self.timestep_type = timestep_type
+        self.natten_direction = natten_direction
+        self.spatial_size = spatial_size
+        self.dilation = dilation
+        self.num_state = num_state
+        self.classifier_free_guidance = classifier_free_guidance
 
         # self.trans_model = NATTEN(config.hidden_per_pitch)
-        self.trans_model = LSTM_NATTEN((self.label_embed_dim+self.feature_embed_dim), config,
-                                       window=self.window,
-                                       n_unit=self.n_unit,
-                                       n_layers=self.n_layers,
-                                       cross_condition=self.cross_condition,
-                                       )
+        self.trans_model = LSTM_NATTEN((label_embed_dim+features_embed_dim), 
+                                        timestep_type=self.timestep_type,
+                                        diffusion_step=self.diffusion_step,
+                                        natten_direction=self.natten_direction,
+                                        spatial_size=self.spatial_size,
+                                        dilation = self.dilation,
+                                        window=self.window,
+                                        n_unit=self.n_unit,
+                                        n_layers=self.n_layers,
+                                        cross_condition=self.cross_condition,
+                                        )
         self.output = nn.Linear(self.n_unit, 5)
-        self.label_emb = nn.Embedding(config.model_config["label_emb_config"]["num_embed"] + 1, # +1 is for mask
-                                      config.model_config["label_emb_config"]["label_embed_dim"])
-
+        self.label_emb = nn.Embedding(num_state + 1, # +1 is for mask
+                                      label_embed_dim)
         # classifier_free_guidance
-        if config.diffusion_config["params"]["classifier_free_guidance"]:
+        if classifier_free_guidance:
             self.use_cfg = True
-            self.cond_scale = config.diffusion_config["params"]["classifier_free_guidance"]["cond_scale"]
-            self.cond_drop_prob = config.diffusion_config["params"]["classifier_free_guidance"]["cond_drop_prob"]
-            self.null_feature_emb = nn.Parameter(th.randn(1, 128)) # null embedding for cfg
+            # self.cond_scale = cond_scale
+            # self.cond_drop_prob = cond_drop_prob
+            self.null_features_emb = nn.Parameter(th.randn(1, 128)) # null embedding for cfg
         else:
             self.use_cfg = False
+        
 
     def forward(self, label, feature, t, cond_drop_prob=None):
         # feature (=cond_emb) : B x T*88 x H
@@ -80,7 +93,6 @@ class NATTEN(nn.Module):
         self.linear = nn.Sequential(nn.Linear(hidden_per_pitch+5, n_unit),
                                     nn.ReLU())
         self.na = nn.Sequential(*([NeighborhoodAttention2D_diffusion(n_unit, 4, window)]* n_layers))
-
 
     def forward(self, x):
         # x: B x T x 88 x H+5
@@ -132,9 +144,6 @@ class LSTM_NATTEN(nn.Module):
                                                                     dilation=self.dilation[i],
                                                                     timestep_type=self.timestep_type))
             self.na = nn.ModuleList(self.na)
-            # self.na = nn.ModuleList([NeighborhoodAttention2D_diffusion(n_unit, 4, window,
-            #                                                             diffusion_step=self.diffusion_step,
-            #                                                             timestep_type=self.timestep_type)] * n_layers)
         elif self.natten_dir == '2d' and cross_condition == 'cross':
             self.na = []
             for i in range(n_layers):
@@ -186,13 +195,5 @@ class LSTM_NATTEN(nn.Module):
                 x_res = x
                 x, _, t = layers(x, cond, t)
                 x = x + x_res
-
-        # # if use natten2d
-        # elif self.natten_dir == '2d' and not self.cross_condition == 'self':
-        #     x = x.reshape(B, 88, T, -1).permute(0,2,1,3) # B x T x 88 x H
-        #     for layers in self.na:
-        #         x_res = x
-        #         x, t = layers(x, t)
-        #         x = x + x_res
 
         return x

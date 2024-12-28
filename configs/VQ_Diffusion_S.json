@@ -1,7 +1,4 @@
 {
-  "config_file": "config.json",
-  "amp": false,
-  "inference_interval": 10000,
   "wandb": false,
   "local_model_name": "NAR",
   "lm_model_name": "LSTM_NATTEN",
@@ -13,7 +10,6 @@
   "diffusion_config": {
     "target": "diffusion.trainer.DiscreteDiffusion",
     "params": {
-      "customized_transition_matrix": false,
       "diffusion_step": 100,
       "alpha_init_type": "alpha2",
       "auxiliary_loss_weight": 5.0e-4,
@@ -40,39 +36,9 @@
       "trained_encoder": true,
       "encoder_type": "NAR"
     },
-    "lstm_natten_config": {
-      "n_unit": 48,
-      "n_layers": 8,
-      "window": [
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3
-      ],
-      "dilation": [
-        1,
-        2,
-        4,
-        8,
-        1,
-        2,
-        4,
-        8
-      ]
-    },
     "label_emb_config": {
       "num_embed": 5,
-      "spatial_size": [
-        313,
-        88
-      ],
-      "label_embed_dim": 4,
-      "trainable": true,
-      "pos_emb_type": "embedding"
+      "label_embed_dim": 4
     }
   },
   "solver": {

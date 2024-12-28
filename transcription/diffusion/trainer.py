@@ -12,9 +12,11 @@ import torch.nn.functional as F
 import importlib
 
 import numpy as np
+import pytorch_lightning as pl
+from typing import List
+from termcolor import colored
 
 from inspect import isfunction
-from torch.cuda.amp import autocast
 eps = 1e-8
 
 def instantiate_from_config(config):
@@ -74,87 +76,50 @@ def alpha_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 
     btt = (1-att-ctt)/N # This is \bar{beta}
     return at, bt, ct, att, btt, ctt
 
-def get_alpha_schedules(num_steps, N=5, att_1 = 0.99999, att_T = 0.000009, ctt_1 = 0.000009, ctt_T = 0.99999):
-    att = np.linspace(att_1, att_T, num_steps+1, dtype=np.float64) # accumulate (0.9999 ~ 0)
-    at = att[1:]/att[:-1] # alpha (no change prob)
-    ctt = np.linspace(ctt_1, ctt_T, num_steps+1, dtype=np.float64) # accumulate (0.9999 ~ 0)
-    one_minus_ctt = 1 - ctt
-    one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
-    ct = 1-one_minus_ct 
-    bt = (1-at-ct)/N 
-    # calculate btt from bt
-    btt = np.zeros_like(att)
-    btt = (1-att-ctt)/N 
-    # print(btt)
-    return at, bt, ct, att, btt, ctt
-
-def reverse_schedule(time_step, N=100, att_1 = 0.99999, att_T = 0.099999, ctt_1 = 0.000009, ctt_T = 0.9):
-    att = np.arange(0, time_step)/(time_step-1)*(att_T - att_1) + att_1 # accumulate (0.9999 ~ 0)
-    att = np.concatenate(([1], att)) 
-    at = att[1:]/att[:-1] # alpha (no change prob)
-    ctt = np.arange(0, time_step)/(time_step-1)*(ctt_T - ctt_1) + ctt_1 # accumulate (0 ~ 0.9999)
-    ctt = np.concatenate(([0], ctt)) # this is \bar{gamma}
-    one_minus_ctt = 1 - ctt
-    one_minus_ct = one_minus_ctt[1:] / one_minus_ctt[:-1]
-    ct = 1-one_minus_ct 
-    bt = (1-at-ct)/N 
-    att = np.concatenate((att[1:], [1])) # last 1 is for mask
-    ctt = np.concatenate((ctt[1:], [0])) # last 0 is for mask
-    btt = (1-att-ctt)/N # This is \bar{beta}
-    return at, bt, ct, att, btt, ctt
-
-
-class DiscreteDiffusion(nn.Module):
+class DiscreteDiffusion(pl.LightningModule):
     def __init__(
         self,
-        *,
-        model,
-        config,
-        device,
-        diffusion_step=100,
-        alpha_init_type='cos',
-        auxiliary_loss_weight=0,
-        adaptive_auxiliary_loss=False,
-        mask_weight=[1,1],
+        encoder,
+        decoder,
+        label_seq_len: int,
+        diffusion_step: int,
+        gamma_bar_T: float,
+        auxiliary_loss_weight: float,
+        adaptive_auxiliary_loss: bool,
+        mask_weight: List[float],
+        classifier_free_guidance: bool,
+        onset_suppress_sample,
+        onset_weight_kl,
+        no_mask: bool,
+        sample_from_fully_masked: bool,
+        reverse_sampling: bool,
     ):
         super().__init__()
 
-        self.model = model
-        self.label_seq_len = config.model_config['params']['label_seq_len']
-        self.amp = False
-
+        self.encoder = encoder
+        self.decoder = decoder
+        self.label_seq_len = self.shape = label_seq_len
         self.num_classes = 6
         self.loss_type = 'vb_stochastic'
-        self.shape = config.model_config['params']['label_seq_len']
         self.num_timesteps = diffusion_step
         self.parametrization = 'x0'
         self.auxiliary_loss_weight = auxiliary_loss_weight
         self.adaptive_auxiliary_loss = adaptive_auxiliary_loss
         self.mask_weight = mask_weight
-        self.devices = device
-        if config.diffusion_config["params"]["onset_suppress_sample"]:
-            self.onset_suppress = config.diffusion_config["params"]["onset_suppress_sample"]
+        if onset_suppress_sample:
+            self.onset_suppress = onset_suppress_sample
         else : self.onset_suppress = False
-        if config.diffusion_config["params"]["onset_weight_kl"]:
-            self.onset_weight_kl = config.diffusion_config["params"]["onset_weight_kl"]
+        if onset_weight_kl:
+            self.onset_weight_kl = onset_weight_kl
         else : self.onset_weight_kl = False
-        if config.diffusion_config["params"]["classifier_free_guidance"]:
-            self.cond_scale = config.diffusion_config["params"]["classifier_free_guidance"]["cond_scale"]
-        else:
-            self.cond_scale = 1
         
-        if alpha_init_type == "alpha1":
-            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
-        elif alpha_init_type == "alpha2": # When ctt_T is 0.9
-            at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.9) # (t,)
-            atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, att_T=0.099999, ctt_T=0.9) # reverse sammpling
-        else:
-            print("alpha_init_type is Wrong !! ")
+        at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=gamma_bar_T) # (t,)
+        atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
+        print(colored(f"alpha schedule: {att[1]:.4f} -> {att[-2]:.4f}, {btt[1]:.4f} -> {btt[-2]:.4f}, {ctt[1]:.4f} -> {ctt[-2]:.4f}", "green"))
         
-        self.reverse_sampling = config.diffusion_config["params"]["reverse_sampling"]
+        self.reverse_sampling = reverse_sampling
         print(f"Reverse Sampling : {self.reverse_sampling}")
-        self.fully_masked = config.diffusion_config["params"]["sample_from_fully_masked"]
+        self.fully_masked = sample_from_fully_masked
 
         at = torch.tensor(at.astype('float64')) # (t,)
         bt = torch.tensor(bt.astype('float64')) # (t,)
@@ -309,28 +274,16 @@ class DiscreteDiffusion(nn.Module):
     def predict_start(self, log_x_t, cond_audio, t, sampling=False):          # p(x0|xt)
         x_t = log_onehot_to_index(log_x_t)
         if sampling==False:
-            if self.amp == True:
-                with autocast():
-                    out = self.model(x_t, cond_audio, t)
-            else:
-                out = self.model(x_t, cond_audio, t)
+            feature = self.encoder(cond_audio)
+            out = self.decoder(x_t, feature, t)
         if sampling==True:
-            if self.amp == True:
-                with autocast():
-                    if t[0].item() == self.num_timesteps-1:
-                        out, saved_encoder_features = self.model(x_t, cond_audio, t, save_encoder_features=True)
-                        self.saved_encoder_features = saved_encoder_features
-
-                    else:
-                        assert self.saved_encoder_features is not None
-                        out, _ = self.model(x_t, cond_audio, t, save_encoder_features=True, saved_encoder_feature=self.saved_encoder_features)
+            if t[0].item() == self.num_timesteps-1:
+                feature = self.encoder(cond_audio)
+                out = self.decoder(x_t, feature, t)
+                self.saved_encoder_features = feature
             else:
-                if t[0].item() == self.num_timesteps-1:
-                    out, saved_encoder_features = self.model(x_t, cond_audio, t, save_encoder_features=True)
-                    self.saved_encoder_features = saved_encoder_features
-                else:
-                    assert self.saved_encoder_features is not None
-                    out, _ = self.model(x_t, cond_audio, t, save_encoder_features=True, saved_encoder_feature=self.saved_encoder_features)
+                assert self.saved_encoder_features is not None
+                out = self.decoder(x_t, self.saved_encoder_features, t)
             if t[0].item() == 0: self.saved_encoder_features = None
 
         assert out.size(0) == x_t.size(0)
@@ -542,10 +495,6 @@ class DiscreteDiffusion(nn.Module):
         return log_model_prob, vb_loss
 
 
-    @property
-    def device(self):
-        return self.model.to_logits[-1].weight.device
-
     def forward(
             self, 
             label,
@@ -558,8 +507,6 @@ class DiscreteDiffusion(nn.Module):
         """
         input shape : B x T*88 x H+1 
         """
-        if kwargs.get('autocast') == True:
-            self.amp = True
         batch_size = label.shape[0]
         device = label.device
             
@@ -576,7 +523,6 @@ class DiscreteDiffusion(nn.Module):
 
         if return_loss:
             out['loss'] = loss 
-        self.amp = False
         return out
 
 
@@ -623,7 +569,7 @@ class DiscreteDiffusion(nn.Module):
                         labels.append(log_z.argmax(1).cpu().numpy())
 
         else: 
-            raise ValueError("Not implemented yet, but what is this for anyway?")
+            raise ValueError("Not implemented yet")
         
 
         label_token = log_onehot_to_index(log_z)

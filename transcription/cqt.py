@@ -4,7 +4,7 @@ import torch.nn as nn
 import librosa
 import nnAudio.features
 import nnAudio.utils
-from .constants import SR, HOP
+from transcription.constants import SR, HOP
 import warnings
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)

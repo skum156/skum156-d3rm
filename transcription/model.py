@@ -7,10 +7,9 @@ from torchaudio import transforms
 from natten import NeighborhoodAttention2D
 
 # from .cqt import CQT
-from .constants import SR, HOP
-from .context import random_modification, update_context
+from transcription.constants import SR, HOP
 # from .cqt import MultiCQT
-from .midispectrogram import CombinedSpec, MidiSpec
+from transcription.midispectrogram import CombinedSpec, MidiSpec
 
 class NonARModel(nn.Module):
     def __init__(self, config, perceptual_w=False):
@@ -22,9 +21,7 @@ class NonARModel(nn.Module):
         self.hidden_per_pitch = config.hidden_per_pitch
         self.context_len = self.win_fw + self.win_bw + 1
         self.pitchwise = config.pitchwise_lstm
-        if 'CQT' in self.model:
-            self.frontend = MultiCQT()
-        elif 'Mel2' in self.model:
+        if 'Mel2' in self.model:
             self.frontend = CombinedSpec()
         elif 'MIDI' in self.model:
             self.frontend = MIDIFrontEnd(config.n_per_pitch)
@@ -332,6 +329,24 @@ class MIDIFrontEnd(nn.Module):
         midi_high = self.midi_high(audio, detune_list)
         spec = th.stack([midi_low, midi_mid, midi_high], dim=1)
         return spec # B, 3, F, T
+
+class HarmonicDilatedConv(nn.Module):
+    def __init__(self, c_in, c_out, n_per_pitch=4, use_film=False, n_f=None) -> None:
+        super().__init__()
+        dilations = [round(12*np.log2(a)*n_per_pitch) for a in range(2, 10)]
+        self.conv = nn.ModuleDict()
+        for i, d in enumerate(dilations):
+            self.conv[str(i)] = nn.Conv2d(c_in, c_out, [1, 3], padding='same', dilation=[1, d])
+        self.use_film = use_film
+        if use_film:
+            self.film = FilmLayer(n_f, c_out)
+    def forward(self, x):
+        x = self.conv['0'](x) + self.conv['1'](x) + self.conv['2'](x) + self.conv['3'](x) + \
+            self.conv['4'](x) + self.conv['5'](x) + self.conv['6'](x) + self.conv['7'](x)
+        if self.use_film:
+            x = self.film(x)
+        x = th.relu(x)
+        return x
 
 class PAR_v2_HPP(nn.Module):
     def get_conv2d_block(self, channel_in,channel_out, kernel_size = [1, 3], pool_size = None, dilation = [1, 1]):

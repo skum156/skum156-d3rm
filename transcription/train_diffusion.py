@@ -35,15 +35,9 @@ import wandb
 
 from .diffusion.lr_scheduler import ReduceLROnPlateauWithWarmup
 from .model_diffusion import TransModel
-try:
-    from torch.cuda.amp import autocast, GradScaler
-    AMP = True
-except:
-    print('Warning: import torch.amp failed, so no amp will be used!')
-    AMP = False
 from .diffusion.ema import EMA
 from .constants import HOP
-from .data import MAESTRO_V3, MAESTRO, MAPS, EmotionDataset, SMD, ViennaCorpus
+from .dataset import MAESTRO_V3, MAESTRO, MAPS, EmotionDataset, SMD, ViennaCorpus
 from .loss import FocalLoss
 from .evaluate import evaluate
 from .utils import summary, CustomSampler
@@ -233,24 +227,11 @@ def sample_func(trainer, audio, ema, config, visualize_denoising=False):
     else:
         suffix = ''
     with th.no_grad():
-        if config.debug == False:
-            if config.amp:
-                with autocast(): # TODO : work on trainer.py
-                    samples, labels = trainer.sample(audio,
-                                             filter_ratio = 0, # TODO : what is this for?
-                                             visualize_denoising=visualize_denoising
-                                             ) # input : [features + noisy label]
-            else:
-                samples, labels = trainer.sample(audio, 
-                                         filter_ratio=0,
-                                         visualize_denoising=visualize_denoising
-                                         )
-        else:
-            samples, labels = trainer.sample(audio,
-                                     filter_ratio=0,
-                                     visualize_denoising=visualize_denoising
-                                     ) 
-    
+        samples, labels = trainer.sample(audio,
+                                    filter_ratio=0,
+                                    visualize_denoising=visualize_denoising
+                                    ) 
+
         if ema is not None:
             ema.modify_to_train()
     
@@ -263,27 +244,15 @@ def train_step(model, batch, ema, optimizer, scheduler, scaler, clip_grad_norm, 
     # _ = batch['velocity'].to(device)
 
     # forward
-    if config.amp:
-        with autocast():
-            label = label.reshape(label.shape[0], -1) # B x T*88
-            disc_diffusion_loss = model(label, audio, return_loss=True) 
-    else:
-        label = label.reshape(label.shape[0], -1) # B x T*88
-        disc_diffusion_loss = model(label, audio, return_loss=True)
+    label = label.reshape(label.shape[0], -1) # B x T*88
+    disc_diffusion_loss = model(label, audio, return_loss=True)
                 
     # backpropagate and update optimizer
-    if config.amp:
-        scaler.scale(disc_diffusion_loss['loss']).backward()
-        if clip_grad_norm is not None:
-            clip_grad_norm(model.parameters())
-        scaler.step(optimizer)
-        scaler.update()
-    else:
-        disc_diffusion_loss['loss'].backward()
-        if clip_grad_norm is not None:
-            clip_grad_norm(model.parameters())
-        optimizer.step()
-        optimizer.zero_grad()
+    disc_diffusion_loss['loss'].backward()
+    if clip_grad_norm is not None:
+        clip_grad_norm(model.parameters())
+    optimizer.step()
+    optimizer.zero_grad()
     
     # update scheduler
     if scheduler is not None:
@@ -302,13 +271,8 @@ def valid_step(trainer, batch, ema, step, device, config):
     # _ = batch['velocity'].to(device)
     shape = label.shape
     # Forward step (for loss calculation)
-    if config.amp:
-        with autocast():
-            label = label.reshape(label.shape[0], -1) # B x T*88
-            disc_diffusion_loss = trainer(label, audio, return_loss=True) 
-    else:
-        label = label.reshape(label.shape[0], -1) # B x T*88
-        disc_diffusion_loss = trainer(label, audio, return_loss=True)
+    label = label.reshape(label.shape[0], -1) # B x T*88
+    disc_diffusion_loss = trainer(label, audio, return_loss=True)
     # Sample step (for metrics calculation)
     # if step % config.inference_step == 0:
     frame_out, _ = sample_func(trainer, audio, ema, config)
@@ -398,15 +362,6 @@ class PadCollate:
 
 
 def train(rank, world_size, config, ddp=True):
-    th.cuda.set_device(rank)
-    if ddp:
-        setup(rank, world_size, port=config.port)
-    else:
-        assert world_size == 1 and rank == 0
-    device = f'cuda:{rank}'
-    seed = config.seed + rank
-    th.manual_seed(seed)
-    np.random.seed(seed)
 
     # Load diffusion model and trainer
     model = TransModel(config, device=device)
@@ -415,19 +370,6 @@ def train(rank, world_size, config, ddp=True):
         for param in model.pretrain_model.parameters(): param.requires_grad = False
     elif config.finetune:
         print(colored("Finetuning/Training pretrained model", "red", attrs=["bold"]))
-    if config.diffusion_config["params"]["customized_transition_matrix"]:
-        from transcription.diffusion.trainer_customize import DiscreteDiffusionCustomized
-        trainer = DiscreteDiffusionCustomized(
-                        model=model,
-                        config=config,
-                        device=device,
-                        diffusion_step=config.diffusion_config["params"]["diffusion_step"],
-                        alpha_init_type=config.diffusion_config["params"]["alpha_init_type"],
-                        auxiliary_loss_weight=config.diffusion_config["params"]["auxiliary_loss_weight"],
-                        adaptive_auxiliary_loss=config.diffusion_config["params"]["adaptive_auxiliary_loss"],
-                        mask_weight=config.diffusion_config["params"]["mask_weight"],
-        )
-    elif not config.diffusion_config["params"]["customized_transition_matrix"]:
         trainer = DiscreteDiffusion(
                         model=model,
                         config=config,
@@ -456,11 +398,6 @@ def train(rank, world_size, config, ddp=True):
         ema = EMA(**ema_args)
     else:
         ema = None
-    # configure for amp
-    if config.amp:
-        scaler = GradScaler()
-        print('Using AMP for training!')
-    else : scaler = None
     # resume model
     if config.resume_dir:
         model_saver = ModelSaver(config, resume=True, order='higher')

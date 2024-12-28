@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "fit",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main_cli.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/hounsu/subproject/d3rm",
+            "args": ["fit", 
+                "-c", "./configs/D3RM_cli.yaml",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
+            },
+            "justMyCode": false
+
+        }
+    ]
+}
