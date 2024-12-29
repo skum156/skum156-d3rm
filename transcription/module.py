@@ -65,7 +65,7 @@ class D3RM(DiscreteDiffusion):
         #     self.ema_encoder = EMA(self.encoder, decay=ema_decay, update_interval=ema_update_interval, device=self.device)
         #     self.ema_decoder= EMA(self.decoder, decay=ema_decay, update_interval=ema_update_interval, device=self.device)
         self.step = 0
-        # self.validation_step_outputs = defaultdict(list)
+        self.validation_step_outputs = defaultdict(list)
 
     def training_step(self, batch, batch_idx):
         audio = batch['audio'].to(self.device) # B x L
@@ -101,19 +101,19 @@ class D3RM(DiscreteDiffusion):
             validation_metric[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
         validation_metric['val/accuracy_loss'] = accuracy.mean()
         validation_metric['val/diffusion_loss'] = disc_diffusion_loss['loss'].unsqueeze(0)
-        self.log_dict(validation_metric, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
-        # for k, v in validation_metric.items():
-        #     self.validation_step_outputs[k].extend(v)
+        # self.log_dict(validation_metric, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
+        for k, v in validation_metric.items():
+            self.validation_step_outputs[k].extend(v)
     
-    # def on_validation_epoch_end(self):
-    #     validation_metric_mean = defaultdict(list)
-    #     for k, v in self.validation_step_outputs.items():
-    #         if 'loss' in k:
-    #             validation_metric_mean[k] = torch.mean(torch.stack(v))
-    #         else:
-    #             validation_metric_mean[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
-    #     self.log_dict(validation_metric_mean, prog_bar=True, logger=True, on_step=True, on_epoch=False, sync_dist=True)
-    #     self.validation_step_outputs.clear()
+    def on_validation_epoch_end(self):
+        validation_metric_mean = defaultdict(list)
+        for k, v in self.validation_step_outputs.items():
+            if 'loss' in k:
+                validation_metric_mean[k] = torch.mean(torch.stack(v))
+            else:
+                validation_metric_mean[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
+        self.log_dict(validation_metric_mean, prog_bar=True, logger=True, on_step=True, on_epoch=False, sync_dist=True)
+        self.validation_step_outputs.clear()
     
     def test_step(self, batch, batch_idx):
         audio = batch['audio'].to(self.device)
