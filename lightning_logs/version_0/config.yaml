@@ -103,7 +103,7 @@ model:
   scheduler:
     class_path: lightning.pytorch.cli.ReduceLROnPlateau
     init_args:
-      monitor: train/diffusion_loss
+      monitor: diffusion_loss
       mode: min
       factor: 0.8
       patience: 25000

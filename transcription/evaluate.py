@@ -62,7 +62,7 @@ def evaluate(sample, label, sample_vel=None, vel_ref=None, band_eval=False):
     p, r, f, o = evaluate_notes(i_ref, p_ref, i_est, p_est)
     metrics['metric/note-with-offsets/precision'].append(p)
     metrics['metric/note-with-offsets/recall'].append(r)
-    metrics['metric/note-with-offsets/f1'].append(f)
+    metrics['metric_note_with_offsets_f1'].append(f)
     metrics['metric/note-with-offsets/overlap'].append(o)
 
     if band_eval:

@@ -65,7 +65,7 @@ class D3RM(DiscreteDiffusion):
         #     self.ema_encoder = EMA(self.encoder, decay=ema_decay, update_interval=ema_update_interval, device=self.device)
         #     self.ema_decoder= EMA(self.decoder, decay=ema_decay, update_interval=ema_update_interval, device=self.device)
         self.step = 0
-        self.validation_step_outputs = defaultdict(list)
+        # self.validation_step_outputs = defaultdict(list)
 
     def training_step(self, batch, batch_idx):
         audio = batch['audio'].to(self.device) # B x L
@@ -75,7 +75,7 @@ class D3RM(DiscreteDiffusion):
         # forward
         label = label.reshape(label.shape[0], -1)
         disc_diffusion_loss = self(label, audio, return_loss=True)
-        self.log('train/diffusion_loss', disc_diffusion_loss['loss'].mean())
+        self.log('train/diffusion_loss', disc_diffusion_loss['loss'].mean(), prog_bar=True, logger=True, on_step=True, on_epoch=False)
         self.log('lr', self.trainer.optimizers[0].param_groups[0]['lr'])
 
         # if self.use_ema:
@@ -96,22 +96,24 @@ class D3RM(DiscreteDiffusion):
         for n in range(audio.shape[0]):
             sample = frame_out.reshape(*shape)[n] 
             metrics = evaluate(sample, label.reshape(*shape)[n], band_eval=False)
-            for k, v in metrics.items():
-                validation_metric[k].append(v)
-        validation_metric['val/accuracy_loss'] = accuracy.mean(dim=-1)
-        validation_metric['val/diffusion_loss'] = disc_diffusion_loss['loss'].unsqueeze(0)
+            for k, v in metrics.items(): validation_metric[k].append(v)
         for k, v in validation_metric.items():
-            self.validation_step_outputs[k].extend(v)
+            validation_metric[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
+        validation_metric['val/accuracy_loss'] = accuracy.mean()
+        validation_metric['val/diffusion_loss'] = disc_diffusion_loss['loss'].unsqueeze(0)
+        self.log_dict(validation_metric, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
+        # for k, v in validation_metric.items():
+        #     self.validation_step_outputs[k].extend(v)
     
-    def on_validation_epoch_end(self):
-        validation_metric_mean = defaultdict(list)
-        for k, v in self.validation_step_outputs.items():
-            if 'loss' in k:
-                validation_metric_mean[k] = torch.mean(torch.stack(v))
-            else:
-                validation_metric_mean[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
-        self.log_dict(validation_metric_mean, prog_bar=True, logger=True, on_step=False, on_epoch=True,sync_dist=True)
-        self.validation_step_outputs.clear()
+    # def on_validation_epoch_end(self):
+    #     validation_metric_mean = defaultdict(list)
+    #     for k, v in self.validation_step_outputs.items():
+    #         if 'loss' in k:
+    #             validation_metric_mean[k] = torch.mean(torch.stack(v))
+    #         else:
+    #             validation_metric_mean[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
+    #     self.log_dict(validation_metric_mean, prog_bar=True, logger=True, on_step=True, on_epoch=False, sync_dist=True)
+    #     self.validation_step_outputs.clear()
     
     def test_step(self, batch, batch_idx):
         audio = batch['audio'].to(self.device)
@@ -159,7 +161,7 @@ class D3RM(DiscreteDiffusion):
             metrics = evaluate(frame, batch['label'][n][1:].detach().cpu()[:-1], band_eval=False)
             for k, v in metrics.items():
                 test_metric[k].append(v)
-            print(f'\n note f1: {metrics["metric/note/f1"][0]:.4f}, note_with_offsets_f1: {metrics["metric/note-with-offsets/f1"][0]:.4f}', batch['path'])
+            print(f'\n note f1: {metrics["metric/note/f1"][0]:.4f}, note_with_offsets_f1: {metrics["metric_note_with_offsets_f1"][0]:.4f}', batch['path'])
             print(f'\n note precision: {metrics["metric/note/precision"][0]:.4f}, note_with_offsets_precision : {metrics["metric/note-with-offsets/precision"][0]:.4f}', batch['path'])
             print(f'\n note recall: {metrics["metric/note/recall"][0]:.4f}, note_with_offsets_recall : {metrics["metric/note-with-offsets/recall"][0]:.4f}', batch['path'])
         

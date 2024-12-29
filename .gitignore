@@ -5,3 +5,4 @@ runs/
 *.pyc
 logs/
 checkpoints/
+lightning_logs/

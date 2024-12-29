@@ -1,7 +1,7 @@
 seed_everything: 23
 # ckpt_path : ./checkpoints/2024-12-29T05-42-12/last.ckpt
 debug: False
-wandb: False
+wandb: True
 
 trainer:
   benchmark: True
@@ -13,7 +13,7 @@ trainer:
   strategy: ddp
   log_every_n_steps: 10
   check_val_every_n_epoch: null
-  val_check_interval: 1000
+  val_check_interval: 5000
   # enable_checkpointing: True
   max_steps: 800000
 

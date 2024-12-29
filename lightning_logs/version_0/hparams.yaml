@@ -78,7 +78,7 @@ scheduler:
     factor: 0.8
     min_lr: 1.0e-05
     mode: min
-    monitor: train/diffusion_loss
+    monitor: diffusion_loss
     patience: 25000
     threshold: 0.1
     threshold_mode: rel

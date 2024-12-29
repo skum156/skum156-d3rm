@@ -335,7 +335,7 @@ def test_step(trainer, batch, ema, step, device, config):
         metrics = evaluate(frame, batch['label'][n][1:].detach().cpu()[:-1], band_eval=False) # TODO: check if [:-1] is right.
         for k, v in metrics.items():
             test_metric[k].append(v)
-        print(f'\n note f1: {metrics["metric/note/f1"][0]:.4f}, note_with_offsets_f1: {metrics["metric/note-with-offsets/f1"][0]:.4f}', batch['path'])
+        print(f'\n note f1: {metrics["metric/note/f1"][0]:.4f}, note_with_offsets_f1: {metrics["metric_note_with_offsets_f1"][0]:.4f}', batch['path'])
         print(f'\n note precision: {metrics["metric/note/precision"][0]:.4f}, note_with_offsets_precision : {metrics["metric/note-with-offsets/precision"][0]:.4f}', batch['path'])
         print(f'\n note recall: {metrics["metric/note/recall"][0]:.4f}, note_with_offsets_recall : {metrics["metric/note-with-offsets/recall"][0]:.4f}', batch['path'])
     
@@ -616,7 +616,7 @@ def train(rank, world_size, config, ddp=True):
                 metrics = evaluate(frame, label, band_eval=False) # TODO: check if [:-1] is right.
                 for k, v in metrics.items():
                     test_metrics[k].append(v)
-                print(f'\n note f1: {metrics["metric/note/f1"][0]:.4f}, note_with_offsets_f1: {metrics["metric/note-with-offsets/f1"][0]:.4f}', batch['path'])
+                print(f'\n note f1: {metrics["metric/note/f1"][0]:.4f}, note_with_offsets_f1: {metrics["metric_note_with_offsets_f1"][0]:.4f}', batch['path'])
                 print(f'\n note precision: {metrics["metric/note/precision"][0]:.4f}, note_with_offsets_precision : {metrics["metric/note-with-offsets/precision"][0]:.4f}', batch['path'])
                 print(f'\n note recall: {metrics["metric/note/recall"][0]:.4f}, note_with_offsets_recall : {metrics["metric/note-with-offsets/recall"][0]:.4f}', batch['path'])
             else:

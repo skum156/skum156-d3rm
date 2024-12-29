@@ -37,16 +37,15 @@ class D3RMCLI(LightningCLI):
                                    offline=(not self.config.fit.wandb),
                                    id=id)
 
-        # Model checkpoint
+        # Model checkpoint (automatically called after validation)
         model_checkpoint_callback = ModelCheckpoint(
             dirpath=f'./checkpoints/{self.now}',
-            monitor='metric/note-with-offsets/f1',
+            monitor='metric_note_with_offsets_f1',
             mode='max',
             save_top_k=5,
-            every_n_train_steps=self.config.fit.trainer.val_check_interval,
             save_last=True,
             verbose=True,
-            filename='{step:07}-{note-with-offsets-f1:.4f}',)
+            filename='{step:07}-{metric_note_with_offsets_f1:.4f}') # python recognized '/', '-' as '_'
 
         self.trainer.logger = wandb_logger
         self.trainer.callbacks.append(model_checkpoint_callback)
