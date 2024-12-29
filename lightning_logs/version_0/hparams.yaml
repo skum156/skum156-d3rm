@@ -1,0 +1,87 @@
+_instantiator: pytorch_lightning.cli.instantiate_module
+adaptive_auxiliary_loss: true
+auxiliary_loss_weight: 0.0005
+classifier_free_guidance: false
+decoder:
+  class_path: transcription.decoder.TransModel
+  init_args:
+    classifier_free_guidance: false
+    condition_method: self
+    diffusion_step: 100
+    dilation:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 1
+    - 2
+    - 4
+    - 8
+    label_embed_dim: 4
+    lstm_dim: 48
+    n_layers: 8
+    natten_direction: 2d
+    num_state: 5
+    spatial_size:
+    - 313
+    - 88
+    timestep_type: adalayernorm
+    window:
+    - 3
+    - 3
+    - 3
+    - 3
+    - 3
+    - 3
+    - 3
+    - 3
+diffusion_step: 100
+ema_decay: 0.99
+ema_update_interval: 25
+encoder:
+  class_path: transcription.encoder.ARModel
+  init_args:
+    use_vel: false
+encoder_parameters: pretrained
+freeze_encoder: false
+gamma_bar_T: 0.9
+label_seq_len: 27544
+mask_weight:
+- 1.0
+- 1.0
+no_mask: false
+onset_suppress_sample: false
+onset_weight_kl: false
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    amsgrad: false
+    betas:
+    - 0.9
+    - 0.96
+    capturable: false
+    differentiable: false
+    eps: 1.0e-08
+    foreach: null
+    fused: null
+    lr: 0.001
+    maximize: false
+    weight_decay: 0.045
+pretrained_encoder_path: model_170k_0.9063_nonar.pt
+reverse_sampling: true
+sample_from_fully_masked: true
+scheduler:
+  class_path: lightning.pytorch.cli.ReduceLROnPlateau
+  init_args:
+    cooldown: 0
+    eps: 1.0e-08
+    factor: 0.8
+    min_lr: 1.0e-05
+    mode: min
+    monitor: train/diffusion_loss
+    patience: 25000
+    threshold: 0.1
+    threshold_mode: rel
+    verbose: false
+test_save_path: ./results/
+use_ema: true

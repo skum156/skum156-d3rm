@@ -1,5 +1,5 @@
 seed_everything: 23
-# ckpt_path : ./checkpoints/2024-10-30T10-02-10/last.ckpt
+# ckpt_path : ./checkpoints/2024-12-29T05-42-12/last.ckpt
 debug: False
 wandb: False
 
@@ -13,29 +13,24 @@ trainer:
   strategy: ddp
   log_every_n_steps: 10
   check_val_every_n_epoch: null
-  val_check_interval: 5000
+  val_check_interval: 1000
   # enable_checkpointing: True
-  max_steps: 8000000
+  max_steps: 800000
 
-  # callbacks:
-  #   - class_path: pytorch_lightning.callbacks.ModelCheckpoint
-  #     init_args:
-  #       monitor: metric/note-with-offsets/f1
-  #       mode: max
-  #       save_top_k: 5
-  #       save_last: True
-  #       save_weights_only: False
-  #       filename: '{step}-{metric/note-with-offsets/f1:.4f}'
-  #       dirpath: checkpoints
+  callbacks:
+    - class_path: transcription.callbacks.ema.EMACallback
+      init_args:
+        decay: 0.99
+        use_ema_weights: True
 
 model:
   encoder_parameters: pretrained
   pretrained_encoder_path: model_170k_0.9063_nonar.pt
   freeze_encoder: False
   test_save_path: './results/'
-  use_ema: True
-  ema_decay: 0.99
-  ema_update_interval: 25
+  # use_ema: True
+  # ema_decay: 0.99
+  # ema_update_interval: 25
 
   label_seq_len: 27544
   diffusion_step: 100
@@ -92,7 +87,7 @@ model:
 data:
   data_dir: './data/maestro-v3.0.0'
   batch_size: 4
-  num_workers: 8
+  num_workers: 12
   # train: True
   # validation: True
   # test: True

@@ -116,6 +116,7 @@ class DiscreteDiffusion(pl.LightningModule):
         at, bt, ct, att, btt, ctt = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=gamma_bar_T) # (t,)
         atr, btr, ctr, attr, bttr, cttr = alpha_schedule(self.num_timesteps, N=self.num_classes-1, ctt_T=0.99999) # (t,)
         print(colored(f"alpha schedule: {att[1]:.4f} -> {att[-2]:.4f}, {btt[1]:.4f} -> {btt[-2]:.4f}, {ctt[1]:.4f} -> {ctt[-2]:.4f}", "green"))
+        print(colored(f"reverse schedule: {attr[1]:.4f} -> {attr[-2]:.4f}, {bttr[1]:.4f} -> {bttr[-2]:.4f}, {cttr[1]:.4f} -> {cttr[-2]:.4f}", "green"))
         
         self.reverse_sampling = reverse_sampling
         print(f"Reverse Sampling : {self.reverse_sampling}")
