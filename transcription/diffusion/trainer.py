@@ -507,9 +507,6 @@ class DiscreteDiffusion(pl.LightningModule):
         """
         input shape : B x T*88 x H+1 
         """
-        batch_size = label.shape[0]
-        device = label.device
-            
         # now we get cond_emb and sample_image
         ######## Diffusion Training ########
         if is_train == True:

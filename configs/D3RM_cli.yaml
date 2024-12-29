@@ -1,7 +1,7 @@
 seed_everything: 23
 # ckpt_path : ./checkpoints/2024-10-30T10-02-10/last.ckpt
 debug: False
-wandb: True
+wandb: False
 
 trainer:
   benchmark: True

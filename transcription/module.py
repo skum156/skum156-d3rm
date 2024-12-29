@@ -76,6 +76,7 @@ class D3RM(DiscreteDiffusion):
         label = label.reshape(label.shape[0], -1)
         disc_diffusion_loss = self(label, audio, return_loss=True)
         self.log('train/diffusion_loss', disc_diffusion_loss['loss'].mean())
+        self.log('lr', self.trainer.optimizers[0].param_groups[0]['lr'])
 
         if self.use_ema:
             self.ema_encoder.update(iteration=self.step)
@@ -170,7 +171,6 @@ class D3RM(DiscreteDiffusion):
 
     def sample_func(self, audio, visualize_denoising=False):
         tic = time.time()
-        print('\nBegin to sample...\n')
         if self.use_ema:
             self.ema_encoder.modify_to_inference()
             self.ema_decoder.modify_to_inference()
@@ -186,7 +186,6 @@ class D3RM(DiscreteDiffusion):
             if self.use_ema:
                 self.ema_encoder.modify_to_train()
                 self.ema_decoder.modify_to_train()
-        print('Sample done, time: {:.2f}'.format(time.time() - tic)) 
         return samples['label_token'], labels
 
     def configure_optimizers(self):

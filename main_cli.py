@@ -46,7 +46,7 @@ class D3RMCLI(LightningCLI):
             every_n_train_steps=self.config.fit.trainer.val_check_interval,
             save_last=True,
             verbose=True,
-            filename='{step:07}-{metric/note-with-offsets/f1:.4f}',)
+            filename='{step:07}-{note-with-offsets-f1:.4f}',)
 
         self.trainer.logger = wandb_logger
         self.trainer.callbacks.append(model_checkpoint_callback)

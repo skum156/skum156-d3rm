@@ -117,30 +117,30 @@ def evaluate(sample, label, sample_vel=None, vel_ref=None, band_eval=False):
             metrics[f'metric/note_band{band}_w_offset/overlap'].append(o)
         
 
-    p, r, f, o = evaluate_notes_with_velocity(i_ref, p_ref, v_ref, i_est, p_est, v_est,
-                                                offset_ratio=None, velocity_tolerance=0.1)
-    metrics['metric/note-with-velocity/precision'].append(p)
-    metrics['metric/note-with-velocity/recall'].append(r)
-    metrics['metric/note-with-velocity/f1'].append(f)
-    metrics['metric/note-with-velocity/overlap'].append(o)
+    # p, r, f, o = evaluate_notes_with_velocity(i_ref, p_ref, v_ref, i_est, p_est, v_est,
+    #                                             offset_ratio=None, velocity_tolerance=0.1)
+    # metrics['metric/note-with-velocity/precision'].append(p)
+    # metrics['metric/note-with-velocity/recall'].append(r)
+    # metrics['metric/note-with-velocity/f1'].append(f)
+    # metrics['metric/note-with-velocity/overlap'].append(o)
 
-    p, r, f, o = evaluate_notes_with_velocity(i_ref, p_ref, v_ref, i_est, p_est, v_est, velocity_tolerance=0.1)
-    metrics['metric/note-with-offsets-and-velocity/precision'].append(p)
-    metrics['metric/note-with-offsets-and-velocity/recall'].append(r)
-    metrics['metric/note-with-offsets-and-velocity/f1'].append(f)
-    metrics['metric/note-with-offsets-and-velocity/overlap'].append(o)
+    # p, r, f, o = evaluate_notes_with_velocity(i_ref, p_ref, v_ref, i_est, p_est, v_est, velocity_tolerance=0.1)
+    # metrics['metric/note-with-offsets-and-velocity/precision'].append(p)
+    # metrics['metric/note-with-offsets-and-velocity/recall'].append(r)
+    # metrics['metric/note-with-offsets-and-velocity/f1'].append(f)
+    # metrics['metric/note-with-offsets-and-velocity/overlap'].append(o)
 
 
-    onset_loc = th.where(onset_ref)
+    # onset_loc = th.where(onset_ref)
 
-    gt = vel_ref[onset_loc]
-    est = vel_est[onset_loc]
-    err = est - gt
-    err = err.detach().cpu().numpy()
-    gt = gt.detach().cpu().numpy()
+    # gt = vel_ref[onset_loc]
+    # est = vel_est[onset_loc]
+    # err = est - gt
+    # err = err.detach().cpu().numpy()
+    # gt = gt.detach().cpu().numpy()
 
-    metrics['metric/onset_velocity/abs_err'].append(np.mean(np.abs(err)))
-    metrics['metric/onset_velocity/rel_err'].append(np.mean(np.abs(err) / gt))
+    # metrics['metric/onset_velocity/abs_err'].append(np.mean(np.abs(err)))
+    # metrics['metric/onset_velocity/rel_err'].append(np.mean(np.abs(err) / gt))
 
     '''
     frame_metrics = evaluate_frames(t_ref, f_ref, t_est, f_est)

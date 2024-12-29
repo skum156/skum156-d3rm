@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "main_cli.py",
             "console": "integratedTerminal",
-            "cwd": "/home/hounsu/subproject/d3rm",
+            "cwd": "/home/hounsu/subprojects/d3rm",
             "args": ["fit", 
                 "-c", "./configs/D3RM_cli.yaml",
             ],
