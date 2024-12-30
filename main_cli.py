@@ -42,7 +42,7 @@ class D3RMCLI(LightningCLI):
             dirpath=f'./checkpoints/{self.now}',
             monitor='metric_note_with_offsets_f1',
             mode='max',
-            save_top_k=5,
+            save_top_k=7,
             save_last=True,
             verbose=True,
             filename='{step:07}-{metric_note_with_offsets_f1:.4f}') # python recognized '/', '-' as '_'
