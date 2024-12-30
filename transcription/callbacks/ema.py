@@ -64,10 +64,17 @@ class EMACallback(Callback):
 
     def on_save_checkpoint(self, trainer, pl_module, checkpoint):
         if self.ema is not None:
-            return {"state_dict_ema": get_state_dict(self.ema, unwrap_model)}
+            # print("Saving EMA weights to checkpoint.")
+            checkpoint["state_dict_ema"] = get_state_dict(self.ema, unwrap_model)
+            # return {"state_dict_ema": get_state_dict(self.ema, unwrap_model)}
 
-    def on_load_checkpoint(self, callback_state):
-        if self.ema is not None:
+    # def on_load_checkpoint(self, callback_state):
+    #     if self.ema is not None:
+    #         self.ema.module.load_state_dict(callback_state["state_dict_ema"])
+    def on_load_checkpoint(self, trainer, pl_module, callback_state):
+        if self.ema is None:
+            self.ema = ModelEmaV2(pl_module, decay=self.decay, device=None)
+        if "state_dict_ema" in callback_state:
             self.ema.module.load_state_dict(callback_state["state_dict_ema"])
 
     def store(self, parameters):

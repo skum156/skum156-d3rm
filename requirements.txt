@@ -16,4 +16,4 @@ numpy==1.25.2
 timm
 
 # Install manually
-natten==0.15.1+torch210cu121 -f https://shi-labs.com/natten/wheels/
+# natten==0.15.1+torch210cu121 -f https://shi-labs.com/natten/wheels/

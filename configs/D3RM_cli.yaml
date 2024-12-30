@@ -1,5 +1,5 @@
 seed_everything: 23
-# ckpt_path : ./checkpoints/2024-12-29T05-42-12/last.ckpt
+# ckpt_path : checkpoints/2024-12-30T04-39-45/step=0060000-metric_note_with_offsets_f1=0.9199.ckpt
 debug: False
 wandb: True
 
@@ -8,12 +8,12 @@ trainer:
   gradient_clip_algorithm: norm
   gradient_clip_val: 1.0
   accumulate_grad_batches: 1
-  devices: 1
+  devices: 4
   accelerator: gpu
   strategy: ddp
   log_every_n_steps: 10
   check_val_every_n_epoch: null
-  val_check_interval: 5000
+  val_check_interval: 50
   # enable_checkpointing: True
   max_steps: 800000
 
@@ -23,6 +23,16 @@ trainer:
         decay: 0.99
         use_ema_weights: True
         update_interval: 25
+    # Add checkpoint callback
+    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+      init_args:
+        monitor: metric_note_with_offsets_f1
+        mode: max
+        save_top_k: 5
+        save_last: True
+        filename: '{step:07}-{metric_note_with_offsets_f1:.4f}'
+        dirpath: './checkpoints/'
+        verbose: True
 
 model:
   encoder_parameters: pretrained
@@ -87,7 +97,7 @@ model:
 
 data:
   data_dir: './data/maestro-v3.0.0'
-  batch_size: 8
+  batch_size: 2
   num_workers: 12
   # train: True
   # validation: True

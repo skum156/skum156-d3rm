@@ -11,14 +11,32 @@
             "program": "main_cli.py",
             "console": "integratedTerminal",
             "cwd": "/home/hounsu/subprojects/d3rm",
-            "args": ["fit", 
-                "-c", "./configs/D3RM_cli.yaml",
+            "args": [
+                "fit",
+                "-c",
+                "./configs/D3RM_cli.yaml",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
             },
             "justMyCode": false
-
+        },
+        {
+            "name": "test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main_cli.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/hounsu/subprojects/d3rm",
+            "args": [
+                "test",
+                "-c",
+                "./configs/D3RM_cli.yaml",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
+            },
+            "justMyCode": false
         }
     ]
 }
