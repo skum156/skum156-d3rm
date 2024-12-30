@@ -97,9 +97,9 @@ class D3RM(DiscreteDiffusion):
             sample = frame_out.reshape(*shape)[n] 
             metrics = evaluate(sample, label.reshape(*shape)[n], band_eval=False)
             for k, v in metrics.items(): validation_metric[k].append(v)
-        for k, v in validation_metric.items():
-            validation_metric[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
-        validation_metric['val/accuracy_loss'] = accuracy.mean()
+        # for k, v in validation_metric.items():
+        #     validation_metric[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
+        validation_metric['val/accuracy_loss'] = accuracy.mean(dim=-1)
         validation_metric['val/diffusion_loss'] = disc_diffusion_loss['loss'].unsqueeze(0)
         # self.log_dict(validation_metric, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         for k, v in validation_metric.items():
@@ -112,7 +112,7 @@ class D3RM(DiscreteDiffusion):
                 validation_metric_mean[k] = torch.mean(torch.stack(v))
             else:
                 validation_metric_mean[k] = torch.tensor(np.mean(np.concatenate(v)), device=self.device)
-        self.log_dict(validation_metric_mean, prog_bar=True, logger=True, on_step=True, on_epoch=False, sync_dist=True)
+        self.log_dict(validation_metric_mean, prog_bar=True, logger=True, sync_dist=True)
         self.validation_step_outputs.clear()
     
     def test_step(self, batch, batch_idx):
@@ -193,4 +193,10 @@ class D3RM(DiscreteDiffusion):
     def configure_optimizers(self):
         optimizer = self.optimizer(list(self.encoder.parameters()) + list(self.decoder.parameters()))
         scheduler = self.scheduler(optimizer)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": scheduler.monitor}
+        return {"optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": scheduler,
+                    "monitor": scheduler.monitor,
+                    "interval": "step",
+                    "frequency": 1,
+                    }}

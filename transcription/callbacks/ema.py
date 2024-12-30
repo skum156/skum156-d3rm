@@ -30,6 +30,7 @@ class EMACallback(Callback):
         self.decay = decay
         self.ema = None
         self.use_ema_weights = use_ema_weights
+        self.update_interval = update_interval
 
     def on_fit_start(self, trainer, pl_module):
         "Initialize `ModelEmaV2` from timm to keep a copy of the moving average of the weights"
@@ -38,7 +39,8 @@ class EMACallback(Callback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         "Update the stored parameters using a moving average"
         # Update currently maintained parameters.
-        self.ema.update(pl_module)
+        if (trainer.global_step + 1) % self.update_interval == 0:
+            self.ema.update(pl_module)
 
     def on_validation_epoch_start(self, trainer, pl_module):
         "do validation using the stored parameters"

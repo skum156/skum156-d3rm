@@ -22,6 +22,7 @@ trainer:
       init_args:
         decay: 0.99
         use_ema_weights: True
+        update_interval: 25
 
 model:
   encoder_parameters: pretrained
