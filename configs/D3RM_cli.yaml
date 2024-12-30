@@ -1,5 +1,5 @@
 seed_everything: 23
-# ckpt_path : checkpoints/2024-12-30T04-39-45/step=0060000-metric_note_with_offsets_f1=0.9199.ckpt
+ckpt_path : checkpoints/2024-12-31T01-41-17/step=0000050-metric_note_with_offsets_f1=0.0034.ckpt
 debug: False
 wandb: True
 
@@ -23,16 +23,15 @@ trainer:
         decay: 0.99
         use_ema_weights: True
         update_interval: 25
-    # Add checkpoint callback
-    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
-      init_args:
-        monitor: metric_note_with_offsets_f1
-        mode: max
-        save_top_k: 5
-        save_last: True
-        filename: '{step:07}-{metric_note_with_offsets_f1:.4f}'
-        dirpath: './checkpoints/'
-        verbose: True
+    # - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+    #   init_args:
+    #     monitor: metric_note_with_offsets_f1
+    #     mode: max
+    #     save_top_k: 5
+    #     save_last: True
+    #     filename: '{step:07}-{metric_note_with_offsets_f1:.4f}'
+    #     dirpath: './checkpoints/'
+    #     verbose: True
 
 model:
   encoder_parameters: pretrained

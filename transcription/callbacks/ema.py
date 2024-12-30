@@ -71,11 +71,11 @@ class EMACallback(Callback):
     # def on_load_checkpoint(self, callback_state):
     #     if self.ema is not None:
     #         self.ema.module.load_state_dict(callback_state["state_dict_ema"])
-    def on_load_checkpoint(self, trainer, pl_module, callback_state):
+    def on_load_checkpoint(self, trainer, pl_module, checkpoint):
         if self.ema is None:
             self.ema = ModelEmaV2(pl_module, decay=self.decay, device=None)
-        if "state_dict_ema" in callback_state:
-            self.ema.module.load_state_dict(callback_state["state_dict_ema"])
+        if "state_dict_ema" in checkpoint:
+            self.ema.module.load_state_dict(checkpoint["state_dict_ema"])
 
     def store(self, parameters):
         "Save the current parameters for restoring later."
