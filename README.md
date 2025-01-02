@@ -14,21 +14,23 @@ pip -r install requirements.txt
 
 ## Model Download
 * Pretrained NAR-HC baseline model [[link](https://drive.google.com/file/d/1puA0CkXGioXs9OrS1w-AvwN71yi2cxae/view?usp=sharing)]
-* Pretrained D3RM model [[link]()]
+* Pretrained D3RM model [[link]()] 
+
+Place the pretrained D3RM model in ./checkpoints/pretrained/
 
 ## Download MAESTRO
-https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.csv
-https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.json
-https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip
-https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0-midi.zip
+Download here [[link] (https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip)]
+
+Place the dataset folder inside ./data
 
 ## Training the model
 ```shell
-python -m transcription.train_diffusion --config=configs/VQ_Diffusion_S.json --no-ddp --finetune -b 8 
+python3 main_cli.py fit -c ./configs/D3RM_cli.yaml
 ```
 
 ## Inference
 ```shell
+python3 main_cli.py test -c ./logs/
 CUDA_VISIBLE_DEVICES="1" python -m transcription.train_diffusion --config=configs/VQ_Diffusion_S.json --no-ddp --finetune --eval --resume_dir runs/DiscDiff_240901-102544_91259ght
 ```
 
