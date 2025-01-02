@@ -1,8 +1,9 @@
-# D3RM : A Discrete Denoising Diffusion Refinement Model for Piano Transcription (ICASSP 2025)
+# D3RM : A Discrete Denoising Diffusion Refinement Model for Piano Transcription
 
+This is the source code of D3RM paper accepted in ICASSP 2025.
 Regarding the reproducement of the paper, please let me know your concerns and feel free to comment them in the `Issues` part.
 
-<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true" height="400"/> <img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png" height="400"/>
+<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true" height="300"/> <img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png" height="300"/>
 
 
 ## Installation
@@ -11,6 +12,7 @@ Regarding the reproducement of the paper, please let me know your concerns and f
 git clone https://github.com/hanshounsu/d3rm.git
 pip -r install requirements.txt
 ```
+Current project is based on pytorch-lightning 2.5.0.
 
 ## Model Download
 * Pretrained NAR-HC baseline model [[link](https://drive.google.com/file/d/1puA0CkXGioXs9OrS1w-AvwN71yi2cxae/view?usp=sharing)]
