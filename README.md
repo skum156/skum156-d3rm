@@ -19,7 +19,7 @@ pip -r install requirements.txt
 Place the pretrained D3RM model in ./checkpoints/pretrained/
 
 ## Download MAESTRO
-Download here [[link] (https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip)]
+Download here [[link](https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip)]
 
 Place the dataset folder inside ./data
 
