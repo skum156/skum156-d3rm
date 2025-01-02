@@ -1,4 +1,4 @@
-# D3RM : A Discrete Denoising Diffusion Refinement Model for Piano Transcription
+# D3RM : A Discrete Denoising Diffusion Refinement Model for Piano Transcription (ICASSP 2025)
 
 Regarding the reproducement of the paper, please let me know your concerns and feel free to comment them in the `Issues` part.
 
@@ -31,12 +31,9 @@ python3 main_cli.py fit -c ./configs/D3RM_cli.yaml
 ## Inference
 ```shell
 python3 main_cli.py test -c ./logs/
-CUDA_VISIBLE_DEVICES="1" python -m transcription.train_diffusion --config=configs/VQ_Diffusion_S.json --no-ddp --finetune --eval --resume_dir runs/DiscDiff_240901-102544_91259ght
 ```
 
-## Additional Samples
-
-## Acknowledge
+<!-- ## Acknowledge -->
 
 <!-- 1. We had a consistent design of [FunASR](https://github.com/alibaba/FunASR), including dataloader, model definition and so on. -->
 <!-- 2. We borrowed a lot of code from [Kaldi](http://kaldi-asr.org/) for data preparation. -->
@@ -44,8 +41,6 @@ CUDA_VISIBLE_DEVICES="1" python -m transcription.train_diffusion --config=config
 
 ## License
 This project is licensed under [The MIT License](https://opensource.org/licenses/MIT). 
-FunCodec also contains various third-party components and some code modified from other repos 
-under other open source licenses.
 
 ## Citations
 
