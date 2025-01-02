@@ -70,6 +70,7 @@ class MAESTRO_V3_DataModule(pl.LightningDataModule):
     
     def test_dataloader(self):
         return DataLoader(self.test, batch_sampler=None,
+                        #   batch_size=self.batch_size,
                           num_workers=self.num_workers,
                           pin_memory=False,
                           collate_fn=PadCollate(hop_size=self.hop_size))

@@ -1,8 +1,9 @@
 *.pt
-data/
+data/maestro-v3.0.0/
 runs/
 *.zip
 *.pyc
 logs/
 checkpoints/
 lightning_logs/
+results/

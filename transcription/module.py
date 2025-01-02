@@ -165,8 +165,9 @@ class D3RM(DiscreteDiffusion):
             print(f'\n note precision: {metrics["metric/note/precision"][0]:.4f}, note_with_offsets_precision : {metrics["metric/note-with-offsets/precision"][0]:.4f}', batch['path'])
             print(f'\n note recall: {metrics["metric/note/recall"][0]:.4f}, note_with_offsets_recall : {metrics["metric/note-with-offsets/recall"][0]:.4f}', batch['path'])
         
-        self.log_dict(test_metric, prog_bar=True, logger=True, on_step=False, on_epoch=True,sync_dist=True)
+        # self.log_dict(test_metric, prog_bar=True, logger=True, on_step=False, on_epoch=True,sync_dist=True)
 
+        Path(self.test_save_path).mkdir(parents=True, exist_ok=True)
         for n in range(len(frame_outs)):
             pred = frame_outs[n].detach().cpu().numpy()
             np.savez(Path(self.test_save_path) / (Path(batch['path'][n]).stem + '.npz'), pred=pred)
