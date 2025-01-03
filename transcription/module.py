@@ -11,8 +11,6 @@ from termcolor import colored
 
 import numpy as np
 
-# from adabelief_pytorch import AdaBelief
-
 from transcription.diffusion.trainer import DiscreteDiffusion
 from transcription.diffusion.ema import EMA
 from transcription.constants import HOP
@@ -35,21 +33,15 @@ class D3RM(DiscreteDiffusion):
                 pretrained_encoder_path: str,
                 freeze_encoder: bool,
                 test_save_path: str,
-                # use_ema: bool,
-                # ema_decay: float,
-                # ema_update_interval: int,
                 optimizer: OptimizerCallable = torch.optim.AdamW,
                 scheduler: LRSchedulerCallable = ReduceLROnPlateau,
                  *args, **kwargs):
         super().__init__(encoder=encoder, decoder=decoder, *args, **kwargs)
         self.save_hyperparameters() # for wandb logging
         self.num_classes = 6
-        # self.encoder = encoder
-        # self.decoder = decoder
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.test_save_path = test_save_path
-        # self.use_ema = use_ema
         if encoder_parameters == "pretrained":
             ckpt = torch.load(pretrained_encoder_path)
             self.encoder.load_state_dict(ckpt['model_state_dict'], strict=False)
@@ -60,10 +52,6 @@ class D3RM(DiscreteDiffusion):
                 param.requires_grad = False
             print(colored('Freeze encoder', 'blue', attrs=['bold']))
         else: print(colored('Train encoder', 'blue', attrs=['bold']))
-        # if self.use_ema: # TODO: check if EMA are also well-saved and loaded in ckpt
-        #     print(colored(f'Use EMA, load in {self.device}', 'blue', attrs=['bold']))
-        #     self.ema_encoder = EMA(self.encoder, decay=ema_decay, update_interval=ema_update_interval, device=self.device)
-        #     self.ema_decoder= EMA(self.decoder, decay=ema_decay, update_interval=ema_update_interval, device=self.device)
         self.step = 0
         self.validation_step_outputs = defaultdict(list)
 
@@ -78,9 +66,6 @@ class D3RM(DiscreteDiffusion):
         self.log('train/diffusion_loss', disc_diffusion_loss['loss'].mean(), prog_bar=True, logger=True, on_step=True, on_epoch=False)
         self.log('lr', self.trainer.optimizers[0].param_groups[0]['lr'])
 
-        # if self.use_ema:
-        #     self.ema_encoder.update(iteration=self.step)
-        #     self.ema_decoder.update(iteration=self.step)
         return disc_diffusion_loss['loss']
     
     def validation_step(self, batch, batch_idx):
@@ -174,21 +159,11 @@ class D3RM(DiscreteDiffusion):
 
     def sample_func(self, audio, visualize_denoising=False):
         tic = time.time()
-        # if self.use_ema:
-        #     self.ema_encoder.modify_to_inference()
-        #     self.ema_decoder.modify_to_inference()
-        #     suffix = '_ema'
-        # else:
-        #     suffix = ''
         with torch.no_grad():
             samples, labels = self.sample(audio,
                                         filter_ratio=0,
                                         visualize_denoising=visualize_denoising
                                         ) 
-
-            # if self.use_ema:
-            #     self.ema_encoder.modify_to_train()
-            #     self.ema_decoder.modify_to_train()
         return samples['label_token'], labels
 
     def configure_optimizers(self):
