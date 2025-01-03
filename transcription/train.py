@@ -31,7 +31,7 @@ from adabelief_pytorch import AdaBelief
 
 from .model import ARModel
 from .constants import HOP
-from .data import MAESTRO_V3, MAESTRO, MAPS, EmotionDataset, SMD, ViennaCorpus
+from .dataset import MAESTRO_V3, MAESTRO, MAPS, EmotionDataset, SMD, ViennaCorpus
 from .loss import FocalLoss
 from .evaluate import evaluate
 from .utils import summary, CustomSampler
@@ -270,7 +270,7 @@ def test_step(model, batch, device):
                            vel, batch['velocity'][n].detach().cpu()[1:], band_eval=False)
         for k, v in metrics.items():
             test_metric[k].append(v)
-        print(f'{metrics["metric/note/f1"][0]:.4f}, {metrics["metric/note-with-offsets/f1"][0]:.4f}', batch['path'][n])
+        print(f'{metrics["metric/note/f1"][0]:.4f}, {metrics["metric_note_with_offsets_f1"][0]:.4f}', batch['path'][n])
     
     return test_metric, frame_outs, vel_outs
 
@@ -440,7 +440,7 @@ def train(rank, world_size, config, ddp=True):
                             if key[-2:] == 'f1' or 'loss' in key or key[-3:] == 'err':
                                 print(f'{key} : {value}')
                         valid_mean['metric/note/f1']
-                        model_saver.update(model, optimizer, step, valid_mean['metric/note-with-offsets/f1'], ddp=ddp)
+                        model_saver.update(model, optimizer, step, valid_mean['metric_note_with_offsets_f1'], ddp=ddp)
                     if ddp:
                         dist.barrier()
             if step > config.iteration:

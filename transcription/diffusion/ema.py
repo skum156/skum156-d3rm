@@ -9,7 +9,7 @@ class EMA(object):
                  device=torch.device('cpu')):
 
         self.decay = decay
-        self.update_iterval = update_interval
+        self.update_interval = update_interval
         self.device = device
 
         self.model = model
@@ -24,7 +24,7 @@ class EMA(object):
         self.cur_state_dict = {k: v.clone().to(self.device) for k, v in self.cur_state_dict.items()}
 
     def update(self, iteration):
-        if (iteration + 1) % self.update_iterval == 0:
+        if (iteration + 1) % self.update_interval == 0:
             # print('{} Update ema'.format(iteration))
             if hasattr(self.model, 'get_ema_model') and callable(self.model.get_ema_model):
                 cur_state_dict = self.model.get_ema_model().state_dict()
@@ -52,14 +52,14 @@ class EMA(object):
         self.cur_state_dict = {k: v.clone().to(self.device) for k, v in self.cur_state_dict.items()}
 
         ema_state_dict = self.ema_model.state_dict()
-        ema_state_dict = {k: v.to(self.model.devices) for k, v in ema_state_dict.items()}
+        ema_state_dict = {k: v.to(self.device) for k, v in ema_state_dict.items()}
         if hasattr(self.model, 'get_ema_model') and callable(self.model.get_ema_model):
             self.model.get_ema_model().load_state_dict(ema_state_dict)
         else:
             self.model.load_state_dict(ema_state_dict)
 
     def modify_to_train(self):
-        self.cur_state_dict = {k: v.clone().to(self.model.devices) for k, v in self.cur_state_dict.items()}
+        self.cur_state_dict = {k: v.clone().to(self.device) for k, v in self.cur_state_dict.items()}
         if hasattr(self.model, 'get_ema_model') and callable(self.model.get_ema_model):
             self.model.get_ema_model().load_state_dict(self.cur_state_dict)
         else:

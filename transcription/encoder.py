@@ -1,12 +1,9 @@
 from torch import nn
 import torch as th
-from .constants import HOP
+from transcription.constants import HOP
 from collections import defaultdict
 from torch.nn import functional as F
-from .model import HarmonicDilatedConv, MIDIFrontEnd, FilmLayer
-from .data import MAESTRO_V3
-from torch.utils.data import DataLoader
-from tqdm import tqdm
+from transcription.model import HarmonicDilatedConv, MIDIFrontEnd, FilmLayer
 
 
 class ARModel(nn.Module):
@@ -16,10 +13,9 @@ class ARModel(nn.Module):
         self.hidden_per_pitch = 48
         self.frontend = MIDIFrontEnd(5)
         self.acoustic = PAR_v2_HPP(48, 48, 5)
-        if use_vel:
-            self.vel_acoustic = PAR_v2_HPP(48, 48, 5)
 
-    def forward(self, audio, max_step = 400, device='cpu'):
+    def forward(self, audio, max_step = 400):
+        device = audio.device
         batch_size = audio.shape[0]
         audio_len = audio.shape[1]
         step_len = (audio_len - 1) // HOP+ 1
@@ -199,9 +195,9 @@ class ConvFilmBlock(nn.Module):
         return x
 
 
-def load_pretrain(encoder_type, trained_encoder=True, use_vel=False):
+def load_pretrain(encoder_type, trained_encoder=True):
     if encoder_type == "NAR":
-        model = ARModel(use_vel=use_vel)
+        model = ARModel()
         if trained_encoder:
             ckp = th.load('model_170k_0.9063_nonar.pt')
             model.load_state_dict(ckp['model_state_dict'], strict=False)

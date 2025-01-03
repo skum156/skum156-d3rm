@@ -1,8 +1,9 @@
 # D3RM : A Discrete Denoising Diffusion Refinement Model for Piano Transcription
 
+This is the source code of D3RM paper accepted in ICASSP 2025.
 Regarding the reproducement of the paper, please let me know your concerns and feel free to comment them in the `Issues` part.
 
-<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true" height="400"/> <img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png" height="400"/>
+<img src="https://github.com/hanshounsu/d3rm/blob/main/images/Absorbing%20state.png?raw=true" height="300"/> <img src="https://github.com/hanshounsu/d3rm/blob/main/images/Model%20architecture.png" height="300"/>
 
 
 ## Installation
@@ -11,30 +12,30 @@ Regarding the reproducement of the paper, please let me know your concerns and f
 git clone https://github.com/hanshounsu/d3rm.git
 pip -r install requirements.txt
 ```
+Current project is based on pytorch-lightning 2.5.0.
 
 ## Model Download
 * Pretrained NAR-HC baseline model [[link](https://drive.google.com/file/d/1puA0CkXGioXs9OrS1w-AvwN71yi2cxae/view?usp=sharing)]
-* Pretrained D3RM model [[link]()]
+* Pretrained D3RM model [[link]()] 
+
+Place the pretrained D3RM model in ./checkpoints/pretrained/
 
 ## Download MAESTRO
-https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.csv
-https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.json
-https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip
-https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0-midi.zip
+Download here [[link](https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip)]
+
+Place the dataset folder inside ./data
 
 ## Training the model
 ```shell
-python -m transcription.train_diffusion --config=configs/VQ_Diffusion_S.json --no-ddp --finetune -b 8 
+python3 main_cli.py fit -c ./configs/D3RM_cli.yaml
 ```
 
 ## Inference
 ```shell
-CUDA_VISIBLE_DEVICES="1" python -m transcription.train_diffusion --config=configs/VQ_Diffusion_S.json --no-ddp --finetune --eval --resume_dir runs/DiscDiff_240901-102544_91259ght
+python3 main_cli.py test -c ./logs/
 ```
 
-## Additional Samples
-
-## Acknowledge
+<!-- ## Acknowledge -->
 
 <!-- 1. We had a consistent design of [FunASR](https://github.com/alibaba/FunASR), including dataloader, model definition and so on. -->
 <!-- 2. We borrowed a lot of code from [Kaldi](http://kaldi-asr.org/) for data preparation. -->
@@ -42,8 +43,6 @@ CUDA_VISIBLE_DEVICES="1" python -m transcription.train_diffusion --config=config
 
 ## License
 This project is licensed under [The MIT License](https://opensource.org/licenses/MIT). 
-FunCodec also contains various third-party components and some code modified from other repos 
-under other open source licenses.
 
 ## Citations
 

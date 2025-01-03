@@ -15,8 +15,8 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 import soundfile
 
-from .constants import HOP, SR, MAX_MIDI, MIN_MIDI
-from .midi import parse_midi, parse_pedal
+from transcription.constants import HOP, SR, MAX_MIDI, MIN_MIDI
+from transcription.midi import parse_midi, parse_pedal
 
 def uniform_augmentation(arr, width, prob):
     mask = arr > 0
@@ -196,9 +196,6 @@ class PianoSampleDataset(Dataset):
         # result['velocity'] = result['velocity'].long()
         result['last_onset_time'] = last_onset_time.div_(self.max_last)
         result['last_onset_vel'] = last_onset_vel.div_(128)
-
-        print(result['audio'].shape)   
-        print(result['label'].shape)
 
         return result
 

@@ -1,8 +1,8 @@
 import argparse
 import numpy as np
-from .constants import HOP, MIN_MIDI, MAX_MIDI, SR
-from .midi import save_midi
-from .train import get_dataset, default_config
+from transcription.constants import HOP, MIN_MIDI, MAX_MIDI, SR
+from transcription.midi import save_midi
+from train import get_dataset, default_config
 from collections import defaultdict
 import mir_eval
 from mir_eval.multipitch import evaluate as evaluate_frames
