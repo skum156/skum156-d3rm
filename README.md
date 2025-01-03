@@ -16,7 +16,7 @@ Current project is based on pytorch-lightning 2.5.0.
 
 ## Model Download
 * Pretrained NAR-HC baseline model [[link](https://drive.google.com/file/d/1puA0CkXGioXs9OrS1w-AvwN71yi2cxae/view?usp=sharing)]
-* Pretrained D3RM model [[link]()] 
+* Pretrained D3RM model (To appear) [[link]()] 
 
 Place the pretrained D3RM model in ./checkpoints/pretrained/
 
@@ -32,7 +32,7 @@ python3 main_cli.py fit -c ./configs/D3RM_cli.yaml
 
 ## Inference
 ```shell
-python3 main_cli.py test -c ./logs/
+python3 main_cli.py test -c ./logs/{TARGET_EXPERIMENT_CONFIG}
 ```
 
 <!-- ## Acknowledge -->
