@@ -12,7 +12,6 @@ from termcolor import colored
 import numpy as np
 
 from transcription.diffusion.trainer import DiscreteDiffusion
-from transcription.diffusion.ema import EMA
 from transcription.constants import HOP
 from transcription.evaluate import evaluate
 

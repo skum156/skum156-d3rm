@@ -30,7 +30,6 @@ class D3RMCLI(LightningCLI):
             print(colored("Continue training from checkpoint: ", "red", attrs=['bold']), ckpt_date)
             self.now = id = ckpt_date
         # Logging
-        wandb.login(key="99aeb92834216fc5de43eb5235fbe169caf149c0")
         wandb_logger = WandbLogger(save_dir=f"./logs/{self.now}",
                                    name=self.now,
                                    project="D3RM",
