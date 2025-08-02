@@ -4,7 +4,6 @@ import numpy as np
 from torch.nn import functional as F
 import nnAudio
 from torchaudio import transforms
-from natten import NeighborhoodAttention2D
 
 # from .cqt import CQT
 from transcription.constants import SR, HOP
