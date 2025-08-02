@@ -1,8 +1,11 @@
+# transcription/encoder.py
+
 from torch import nn
 import torch as th
 from transcription.constants import HOP
 from collections import defaultdict
 from torch.nn import functional as F
+# Ensure 'transcription.model' exists and contains HarmonicDilatedConv, MIDIFrontEnd, FilmLayer
 from transcription.model import HarmonicDilatedConv, MIDIFrontEnd, FilmLayer
 
 
@@ -44,7 +47,7 @@ class ARModel(nn.Module):
             else:
                 del conv_out
                 unpad_start = True
-                start = offset * HOP - self.n_fft//2 
+                start = offset * HOP - self.n_fft//2
 
             if step == seg_edges[-1]:  # Last segment
                 unpad_end = False
@@ -53,7 +56,7 @@ class ARModel(nn.Module):
                 # margin for CNN
                 end = (offset + max_step + 10) * HOP + self.n_fft//2
                 unpad_end = True
-            
+
             if hasattr(self, 'vel_acoustic'):
                 conv_out, vel_conv_out = self.local_forward(
                     audio[:, start: end],
@@ -93,15 +96,15 @@ class ARModel(nn.Module):
 class PAR_v2_HPP(nn.Module):
     def get_conv2d_block(self, channel_in,channel_out, kernel_size = [1, 3], pool_size = None, dilation = [1, 1]):
         if(pool_size == None):
-            return nn.Sequential( 
+            return nn.Sequential(
                 nn.Conv2d(channel_in, channel_out, kernel_size=kernel_size, padding='same', dilation=dilation),
                 nn.ReLU(),
                 # nn.BatchNorm2d(channel_out),
                 nn.InstanceNorm2d(channel_out),
-                
+
             )
         else:
-            return nn.Sequential( 
+            return nn.Sequential(
                 nn.Conv2d(channel_in, channel_out, kernel_size=kernel_size, padding='same', dilation=dilation),
                 nn.ReLU(),
                 nn.MaxPool2d(pool_size),
@@ -119,7 +122,7 @@ class PAR_v2_HPP(nn.Module):
         self.block_2_5 = self.get_conv2d_block(cnn_unit, cnn_unit, kernel_size=7)
 
         c3_out = 128
-        
+
         self.conv_3 = HarmonicDilatedConv(cnn_unit, c3_out, n_per_pitch)
         self.conv_4 = HarmonicDilatedConv(c3_out, c3_out, n_per_pitch)
         self.conv_5 = HarmonicDilatedConv(c3_out, c3_out, n_per_pitch)
@@ -139,22 +142,22 @@ class PAR_v2_HPP(nn.Module):
         x = self.conv_5(x)
         x = self.block_4(x)
         x = x[:,:,:,:88]
-        # => [b x 1 x T x 88]
+        # => [b x 1 x T x 88] # This comment in your code is for a specific branch, PAR_v2_HPP output is [B, 128, T, 88] then permuted to [B, T, 128, 88]
 
         x = self.block_5(x)
         # => [b x ch x T x 88]
         x = self.block_6(x) # + x
         x = self.block_7(x) # + x
         x = self.block_8(x) # + x
-        
+
         x = x.permute(0, 2, 1, 3)  # B, 128, T, 88 -> B, T, 128, 88
-        return x  
+        return x
 
 
 class PadCollate:
     def __call__(self, data):
         max_len = data[0]['audio'].shape[0] // HOP
-        
+
         for datum in data:
             step_len = datum['audio'].shape[0] // HOP
             datum['step_len'] = step_len
@@ -169,7 +172,7 @@ class PadCollate:
             else :
                 batch[key] = [datum[key] for datum in data]
         return batch
-    
+
 
 class ConvFilmBlock(nn.Module):
     def __init__(self, channel_in, channel_out, kernel_size, dilation, pool_size=None, use_film=True, n_f=88):
@@ -199,9 +202,22 @@ def load_pretrain(encoder_type, trained_encoder=True):
     if encoder_type == "NAR":
         model = ARModel()
         if trained_encoder:
+            # Note: 'model_170k_0.9063_nonar.pt' might be the D3RM model, not just the encoder.
+            # If it's a full D3RM checkpoint, loading it directly into ARModel might fail due to key mismatches.
+            # You might need to extract only the encoder's state_dict from the full checkpoint.
             ckp = th.load('model_170k_0.9063_nonar.pt')
-            model.load_state_dict(ckp['model_state_dict'], strict=False)
-            print('Use pretrained encoder: NARModel')
+            if 'model_state_dict' in ckp:
+                # If the checkpoint is from PyTorch Lightning, the encoder's keys might be prefixed
+                # e.g., 'encoder.frontend.conv1.weight'
+                encoder_state_dict = {k.replace('encoder.', ''): v for k, v in ckp['model_state_dict'].items() if k.startswith('encoder.')}
+                if encoder_state_dict: # Only load if encoder keys are found
+                    model.load_state_dict(encoder_state_dict, strict=False) # strict=False is often needed for partial loads
+                    print('Use pretrained encoder (ARModel) from full D3RM checkpoint')
+                else:
+                    print('No encoder specific keys found in checkpoint, ARModel not loaded.')
+            else: # Assume checkpoint is directly the ARModel state_dict
+                model.load_state_dict(ckp, strict=False) # strict=False might be helpful here too
+                print('Use pretrained encoder: ARModel')
         else:
-            print('Training encoder (NARModel) from scratch')
+            print('Training encoder (ARModel) from scratch')
     return model
